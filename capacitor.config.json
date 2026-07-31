@@ -1,0 +1,13 @@
+{
+  "appId": "com.uwu",
+  "appName": "PsicoRapport",
+  "webDir": "dist",
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "339102139400-tf1rv64tn6v1ehjia7fmq2hvetaidigo.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
+}
+

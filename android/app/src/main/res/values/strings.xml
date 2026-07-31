@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PsicoRapport</string>
+    <string name="title_activity_main">PsicoRapport</string>
+    <string name="package_name">com.uwu</string>
+    <string name="custom_url_scheme">com.uwu</string>
+    <string name="server_client_id">339102139400-tf1rv64tn6v1ehjia7fmq2hvetaidigo.apps.googleusercontent.com</string>
+</resources>
