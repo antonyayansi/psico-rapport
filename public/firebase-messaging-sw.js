@@ -14,6 +14,18 @@ firebase.initializeApp({
     appId: "1:339102139400:web:763f3ff4493fa001d4fdbd"
 });
 
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('fetch', (event) => {
+    event.respondWith(fetch(event.request));
+});
+
 const messaging = firebase.messaging();
 
 // Manejo de mensajes en background (app cerrada o sin foco)

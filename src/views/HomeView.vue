@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { DEFAULT_PET_NAME } from '../pet'
+import InstallHint from '../components/InstallHint.vue'
 
 const router = useRouter()
 </script>
@@ -23,11 +24,12 @@ const router = useRouter()
             </p>
         </div>
 
-        <div class="w-full z-10 pb-4">
+        <div class="w-full z-10 pb-4 space-y-3">
             <button @click="router.push('/login')"
                 class="w-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 py-4 rounded-full font-semibold text-base active:scale-[0.98] transition-transform">
                 Empezar
             </button>
+            <InstallHint />
         </div>
     </div>
 </template>

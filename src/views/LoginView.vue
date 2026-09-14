@@ -7,6 +7,7 @@ import { signInWithCredential, GoogleAuthProvider } from 'firebase/auth'
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 import { Capacitor } from '@capacitor/core'
 import { ArrowLeft } from 'lucide-vue-next'
+import InstallHint from '../components/InstallHint.vue'
 
 const router = useRouter()
 const errorMsg = ref('')
@@ -99,6 +100,8 @@ const handleGoogleLogin = async () => {
             <p v-if="errorMsg" class="text-sm text-center text-slate-500">
                 {{ errorMsg }}
             </p>
+
+            <InstallHint />
 
         </div>
     </div>
