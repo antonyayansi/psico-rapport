@@ -1,12 +1,12 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuthStore } from '../stores/auth'
 import PetAvatar from '../components/PetAvatar.vue'
 import {
-  PET_COLORS, PET_ACCESSORIES, savePetCustomization, careForPet, decayStats
+  PET_COLORS, PET_ACCESSORIES, savePetCustomization, careForPet, decayStats, DEFAULT_PET_NAME
 } from '../pet'
 import { processUserAction } from '../gamification'
 import { STAGE_META } from '../transition'
@@ -17,13 +17,14 @@ import {
 const router = useRouter()
 const authStore = useAuthStore()
 
-const name = ref('PsicoRapport')
+const name = ref(DEFAULT_PET_NAME)
 const color = ref('amber')
 const accessory = ref('none')
 const hunger = ref(80)
 const happiness = ref(80)
 const energy = ref(80)
-const moodLevel = ref(0)
+const moodLevel = ref(3)
+const moodKey = ref('calma')
 const saving = ref(false)
 const caring = ref(null)
 const savedFlash = ref(false)
@@ -32,13 +33,14 @@ const stageMeta = computed(() => STAGE_META[authStore.transitionStage] || STAGE_
 
 const applyPet = (raw) => {
   const pet = decayStats(raw || {})
-  name.value = pet.name || 'PsicoRapport'
+  name.value = pet.name || DEFAULT_PET_NAME
   color.value = pet.color || 'amber'
   accessory.value = pet.accessory || 'none'
   hunger.value = pet.hunger ?? 80
   happiness.value = pet.happiness ?? 80
   energy.value = pet.energy ?? 80
-  moodLevel.value = pet.moodLevel ?? 0
+  moodLevel.value = pet.moodLevel ?? 3
+  moodKey.value = pet.moodKey || ''
 }
 
 onMounted(() => {
@@ -120,10 +122,11 @@ const barClass = (v) => {
           :color="color"
           :accessory="accessory"
           :mood-level="moodLevel"
+          :mood-key="moodKey"
           size="lg"
           show-name
         />
-        <p class="text-xs text-slate-400 mt-2">Objeto Digital Transicional · refleja tu ánimo</p>
+        <p class="text-xs text-slate-400 mt-2">{{ name }} · refleja tu ánimo</p>
       </div>
 
       <!-- Stats Pou-style -->
@@ -177,7 +180,7 @@ const barClass = (v) => {
             v-model="name"
             maxlength="24"
             class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="Nombre de tu oso"
+            placeholder="Nombre de tu compañero"
           />
         </label>
 

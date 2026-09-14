@@ -72,10 +72,10 @@ export const initFCM = async (uid) => {
             console.log('[FCM] Mensaje en foreground:', payload)
             const { title, body } = payload.notification || {}
             if (Notification.permission === 'granted') {
-                new Notification(title || 'uwu 🐻', {
+                new Notification(title || 'Uwu', {
                     body: body || '',
-                    icon: '/favicon.svg',
-                    badge: '/favicon.svg',
+                    icon: '/emociones/feliz.png',
+                    badge: '/emociones/feliz.png',
                 })
             }
         })

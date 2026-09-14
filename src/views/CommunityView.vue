@@ -9,6 +9,7 @@ import { uploadPostImage, deleteFileFromS3 } from '../aws'
 import { processUserAction } from '../gamification'
 import { useConfirm } from 'primevue/useconfirm'
 import ConfirmDialog from 'primevue/confirmdialog'
+import { DEFAULT_PET_NAME, isPetAuthorName } from '../pet'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -67,7 +68,7 @@ const generateUwuComment = async (postText) => {
                 model: 'gpt-4o-mini',
                 messages: [{
                     role: "system",
-                    content: "Eres PsicoRapport, un oso de anteojos y Objeto Digital Transicional en una app de salud mental de Perú. Estás monitoreando el foro de la comunidad. Analiza la publicación proporcionada. Si el usuario muestra tristeza, ansiedad, desesperación o pide ayuda, reescribe SIEMPRE UN MENSAJE de apoyo compasivo muy corto (máximo 2 oraciones) y con cariño. Si el mensaje es neutro o positivo, responde exactamente con la palabra 'IGNORE'."
+                    content: `Eres ${authStore.pet?.name || DEFAULT_PET_NAME}, un oso de anteojos y Objeto Digital Transicional en una app de salud mental de Perú. Estás monitoreando el foro de la comunidad. Analiza la publicación proporcionada. Si el usuario muestra tristeza, ansiedad, desesperación o pide ayuda, reescribe SIEMPRE UN MENSAJE de apoyo compasivo muy corto (máximo 2 oraciones) y con cariño. Si el mensaje es neutro o positivo, responde exactamente con la palabra 'IGNORE'.`
                 }, {
                     role: "user",
                     content: postText
@@ -128,7 +129,8 @@ const publishPost = async () => {
                         id: Date.now(),
                         type: 'text',
                         text: uwuReply,
-                        authorName: 'PsicoRapport 🐻'
+                        authorName: authStore.pet?.name || DEFAULT_PET_NAME,
+                        isPet: true
                     })
                 })
             }
@@ -335,15 +337,19 @@ const deletePost = (post) => {
                     <div v-if="post.comments && post.comments.length > 0"
                         class="mt-4 space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
                         <div v-for="c in post.comments.slice(-2)" :key="c.id" class="flex space-x-3">
-                            <div class="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-[0.65rem] border border-amber-200 mt-1 flex-shrink-0"
-                                v-if="c.authorName.includes('PsicoRapport')">🐻</div>
+                            <img
+                                v-if="c.isPet || isPetAuthorName(c.authorName)"
+                                src="/emociones/calma.png"
+                                :alt="c.authorName"
+                                class="w-6 h-6 rounded-[28%] object-cover mt-1 flex-shrink-0"
+                            />
                             <img v-else-if="c.authorPhotoUrl" :src="c.authorPhotoUrl"
                                 class="w-6 h-6 rounded-full object-cover mt-1 flex-shrink-0 border border-slate-200" />
                             <div class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center mt-1 flex-shrink-0 text-[0.5rem] text-slate-500 font-bold uppercase"
                                 v-else>{{ c.authorName.charAt(0) }}</div>
                             <div>
                                 <span class="text-xs font-bold block text-slate-800 dark:text-slate-200"
-                                    :class="{ 'text-amber-700 dark:text-amber-400': c.authorName.includes('PsicoRapport') }">{{
+                                    :class="{ 'text-amber-700 dark:text-amber-400': c.isPet || isPetAuthorName(c.authorName) }">{{
                                         c.authorName }}</span>
                                 <p v-if="c.type === 'gif'"
                                     class="text-xs text-slate-600 leading-relaxed italic border-l-2 border-indigo-200 pl-2 opacity-80">

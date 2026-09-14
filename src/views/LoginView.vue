@@ -92,8 +92,9 @@ const handleGoogleLogin = async () => {
 
         <div class="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full space-y-8">
             <div class="text-center space-y-3">
+                <img src="/emociones/feliz.png" alt="Uwu" class="w-24 h-24 mx-auto rounded-[1.5rem] object-cover shadow-md" />
                 <h2 class="text-3xl font-bold text-slate-900">Bienvenido de vuelta</h2>
-                <p class="text-slate-500 text-sm">Inicia sesión y continúa tu camino hacia el bienestar mental con PsicoRapport.
+                <p class="text-slate-500 text-sm">Inicia sesión y continúa tu camino hacia el bienestar mental con Uwu.
                 </p>
             </div>
 

@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { Sparkles, HeartPulse } from 'lucide-vue-next'
+import { Sparkles } from 'lucide-vue-next'
+import { DEFAULT_PET_NAME } from '../pet'
 
 const router = useRouter()
 </script>
@@ -15,13 +16,16 @@ const router = useRouter()
         </div>
 
         <div class="flex flex-col items-center z-10 space-y-6">
-            <div class="bg-white/10 p-5 rounded-full backdrop-blur-md border border-white/20 animate-fade-in-up">
-                <HeartPulse class="w-16 h-16 text-green-300" />
-            </div>
+            <img
+                src="/emociones/feliz.png"
+                :alt="DEFAULT_PET_NAME"
+                class="w-32 h-32 object-cover rounded-[1.75rem] shadow-[0_16px_40px_rgba(16,185,129,0.28)] animate-fade-in-up"
+            />
 
             <div class="text-center space-y-2 animate-fade-in-up" style="animation-delay: 100ms;">
                 <h1 class="text-4xl font-extrabold tracking-tight">Psico<span class="text-green-300">Rapport</span></h1>
                 <p class="text-green-100 text-lg">Tu espacio seguro para sanar.</p>
+                <p class="text-green-200/90 text-sm font-semibold">con {{ DEFAULT_PET_NAME }}</p>
             </div>
 
             <div class="pt-8 w-full animate-fade-in-up" style="animation-delay: 200ms;">

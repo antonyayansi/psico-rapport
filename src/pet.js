@@ -1,6 +1,8 @@
 import { db } from './firebase'
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 
+export const DEFAULT_PET_NAME = 'Uwu'
+
 export const PET_COLORS = [
   { id: 'amber', label: 'Ámbar', hex: '#f59e0b', bg: 'bg-amber-100', face: 'bg-amber-200' },
   { id: 'green', label: 'Andes', hex: '#10b981', bg: 'bg-emerald-100', face: 'bg-emerald-200' },
@@ -19,24 +21,104 @@ export const PET_ACCESSORIES = [
   { id: 'flower', label: 'Flor', emoji: '🌸' }
 ]
 
-export const PET_MOOD_FACES = {
-  1: { emoji: '😢', label: 'Triste', pulse: 'animate-pulse' },
-  3: { emoji: '😐', label: 'Neutral', pulse: '' },
-  5: { emoji: '😊', label: 'Feliz', pulse: '' },
-  0: { emoji: '🐻', label: 'En espera', pulse: '' }
+export const PET_EMOTIONS = {
+  triste: {
+    id: 'triste',
+    src: '/emociones/triste.png',
+    label: 'Triste',
+    level: 1,
+    happiness: 35,
+    pulse: true
+  },
+  enojado: {
+    id: 'enojado',
+    src: '/emociones/enojado.png',
+    label: 'Enojado',
+    level: 2,
+    happiness: 40,
+    pulse: false
+  },
+  temeroso: {
+    id: 'temeroso',
+    src: '/emociones/temeroso.png',
+    label: 'Temeroso',
+    level: 2,
+    happiness: 45,
+    pulse: true
+  },
+  calma: {
+    id: 'calma',
+    src: '/emociones/calma.png',
+    label: 'Calma',
+    level: 3,
+    happiness: 75,
+    pulse: false
+  },
+  motivado: {
+    id: 'motivado',
+    src: '/emociones/motivado.png',
+    label: 'Motivado',
+    level: 4,
+    happiness: 90,
+    pulse: false
+  },
+  feliz: {
+    id: 'feliz',
+    src: '/emociones/feliz.png',
+    label: 'Feliz',
+    level: 5,
+    happiness: 95,
+    pulse: false
+  }
 }
 
-export function defaultPet(uid, name = 'PsicoRapport') {
+export const PET_EMOTION_LIST = [
+  PET_EMOTIONS.triste,
+  PET_EMOTIONS.enojado,
+  PET_EMOTIONS.temeroso,
+  PET_EMOTIONS.calma,
+  PET_EMOTIONS.motivado,
+  PET_EMOTIONS.feliz
+]
+
+const LEVEL_TO_EMOTION = {
+  0: 'calma',
+  1: 'triste',
+  2: 'enojado',
+  3: 'calma',
+  4: 'motivado',
+  5: 'feliz'
+}
+
+export const CHART_MOOD_LABELS = ['', 'Triste', 'Enojado', 'Calma', 'Motivado', 'Feliz']
+
+export function resolveEmotion({ moodKey, moodLevel } = {}) {
+  if (moodKey && PET_EMOTIONS[moodKey]) return PET_EMOTIONS[moodKey]
+  const fromLevel = LEVEL_TO_EMOTION[moodLevel]
+  return PET_EMOTIONS[fromLevel] || PET_EMOTIONS.calma
+}
+
+export function getMoodFace(levelOrKey) {
+  if (typeof levelOrKey === 'string') return resolveEmotion({ moodKey: levelOrKey })
+  return resolveEmotion({ moodLevel: levelOrKey })
+}
+
+export function isPetAuthorName(name = '') {
+  return /psico\s?rapport|uwu/i.test(String(name))
+}
+
+export function defaultPet(uid, name = DEFAULT_PET_NAME) {
   return {
     uid,
-    name,
+    name: name || DEFAULT_PET_NAME,
     color: 'amber',
     accessory: 'none',
     hunger: 80,
     happiness: 80,
     energy: 80,
     lastCareAt: null,
-    moodLevel: 0,
+    moodLevel: 3,
+    moodKey: 'calma',
     createdAt: new Date()
   }
 }
@@ -47,10 +129,6 @@ export function getPetColor(colorId) {
 
 export function getPetAccessory(id) {
   return PET_ACCESSORIES.find(a => a.id === id) || PET_ACCESSORIES[0]
-}
-
-export function getMoodFace(level) {
-  return PET_MOOD_FACES[level] || PET_MOOD_FACES[0]
 }
 
 export async function ensurePet(uid, name) {
@@ -65,19 +143,26 @@ export async function ensurePet(uid, name) {
 export async function savePetCustomization(uid, { name, color, accessory }) {
   const ref = doc(db, 'pets', uid)
   await setDoc(ref, {
-    name: (name || 'PsicoRapport').trim().slice(0, 24),
+    name: (name || DEFAULT_PET_NAME).trim().slice(0, 24),
     color: color || 'amber',
     accessory: accessory || 'none',
     updatedAt: serverTimestamp()
   }, { merge: true })
 }
 
-export async function updatePetMood(uid, moodLevel) {
+export async function updatePetMood(uid, moodKeyOrLevel) {
+  const emotion = typeof moodKeyOrLevel === 'string'
+    ? resolveEmotion({ moodKey: moodKeyOrLevel })
+    : resolveEmotion({ moodLevel: moodKeyOrLevel })
+
   await setDoc(doc(db, 'pets', uid), {
-    moodLevel,
-    happiness: moodLevel === 5 ? 95 : moodLevel === 3 ? 70 : 40,
+    moodLevel: emotion.level,
+    moodKey: emotion.id,
+    happiness: emotion.happiness,
     updatedAt: serverTimestamp()
   }, { merge: true })
+
+  return emotion
 }
 
 /**

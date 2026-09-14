@@ -5,7 +5,7 @@ import { Check, ChevronRight, User, HeartHandshake, SmilePlus } from 'lucide-vue
 import { db } from '../firebase'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
-import { ensurePet, savePetCustomization } from '../pet'
+import { ensurePet, savePetCustomization, PET_COLORS, DEFAULT_PET_NAME } from '../pet'
 import { STAGES } from '../transition'
 import PetAvatar from '../components/PetAvatar.vue'
 
@@ -17,7 +17,7 @@ const preferences = ref({
     reason: '',
     therapyStyle: ''
 })
-const petName = ref('PsicoRapport')
+const petName = ref(DEFAULT_PET_NAME)
 const petColor = ref('amber')
 
 onMounted(async () => {
@@ -73,12 +73,7 @@ const therapyStyles = [
     { id: 'empatico', label: 'Cálido y de contención', icon: HeartHandshake }
 ]
 
-const colorOptions = [
-    { id: 'amber', hex: '#f59e0b' },
-    { id: 'green', hex: '#10b981' },
-    { id: 'sky', hex: '#0ea5e9' },
-    { id: 'rose', hex: '#f43f5e' }
-]
+const colorOptions = PET_COLORS.map(c => ({ id: c.id, hex: c.hex }))
 </script>
 
 <template>
@@ -92,8 +87,8 @@ const colorOptions = [
         <div v-if="step === 1" class="flex-1 flex flex-col pt-4 animate-fade-in-up">
             <h2 class="text-2xl font-bold mb-4">Antes de empezar</h2>
             <p class="text-slate-600 mb-6 leading-relaxed">
-                PsicoRapport es un espacio seguro para tu salud mental. Nuestro compañero virtual "PsicoRapport" te guiará en
-                este proceso, pero no reemplaza a la terapia profesional.
+                PsicoRapport es un espacio seguro para tu salud mental. Nuestro compañero virtual
+                <strong>{{ DEFAULT_PET_NAME }}</strong> te guiará en este proceso, pero no reemplaza a la terapia profesional.
             </p>
             <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-auto">
                 <p class="text-sm text-blue-800 font-medium">🛡️ Tu privacidad es nuestra prioridad. Todos tus datos
@@ -158,17 +153,17 @@ const colorOptions = [
         <!-- Step 4: Pet / ODT Intro -->
         <div v-if="step === 4"
             class="flex-1 flex flex-col items-center text-center pt-4 animate-fade-in-up overflow-y-auto">
-            <PetAvatar :name="petName" :color="petColor" :mood-level="5" size="lg" />
-            <h2 class="text-2xl font-extrabold mb-2 mt-4">Tu objeto de transición</h2>
+            <PetAvatar :name="petName" :color="petColor" mood-key="feliz" :mood-level="5" size="lg" show-name />
+            <h2 class="text-2xl font-extrabold mb-2 mt-4">Conoce a {{ petName || DEFAULT_PET_NAME }}</h2>
             <p class="text-slate-600 text-sm mb-4 max-w-[300px] leading-relaxed">
                 Inspirado en Winnicott: tu mascota te sostiene al inicio (dependencia), te ayuda a ganar autonomía y luego te acerca a un terapeuta.
             </p>
 
             <label class="w-full text-left mb-3">
-                <span class="text-sm font-semibold text-slate-700 mb-1.5 block">Nómbrala</span>
+                <span class="text-sm font-semibold text-slate-700 mb-1.5 block">Ponle un nombre propio</span>
                 <input v-model="petName" maxlength="24"
                     class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="Ej. Andesito" />
+                    placeholder="Ej. Uwu, Andesito, Nube" />
             </label>
 
             <div class="w-full text-left mb-6">
@@ -189,7 +184,7 @@ const colorOptions = [
             <button @click="nextStep"
                 class="w-full mt-auto bg-green-600 text-white py-4 rounded-xl font-bold hover:bg-green-700 active:scale-95 transition-all text-lg flex items-center justify-center gap-2">
                 <SmilePlus class="w-5 h-5" />
-                Empezar con {{ petName || 'mi mascota' }}
+                Empezar con {{ petName || DEFAULT_PET_NAME }}
             </button>
         </div>
 

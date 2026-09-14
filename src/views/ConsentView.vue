@@ -77,8 +77,9 @@ const handleAccept = async () => {
           <span>¿Qué es PsicoRapport?</span>
         </h2>
         <p class="text-slate-600 leading-relaxed">
-          PsicoRapport es una plataforma digital de apoyo emocional y salud mental. Cuenta con un compañero virtual
-          (mascota personalizable) que actúa como <strong class="text-slate-800">Objeto Digital Transicional (ODT)</strong>,
+          PsicoRapport es una plataforma digital de apoyo emocional y salud mental. Cuenta con
+          <strong class="text-slate-800">Uwu</strong>, una mascota personalizable que actúa como
+          <strong class="text-slate-800">Objeto Digital Transicional (ODT)</strong>,
           inspirado en la teoría de Donald Winnicott: te acompaña en la dependencia emocional inicial, fomenta tu
           independencia y facilita el puente hacia un terapeuta humano verificado.
         </p>
@@ -95,7 +96,7 @@ const handleAccept = async () => {
             <AlertTriangle class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
             <p class="text-amber-800 text-xs leading-relaxed">
               <strong>IMPORTANTE:</strong> PsicoRapport NO es un terapeuta, psicólogo ni profesional de salud mental.
-              Las conversaciones con PsicoRapport <strong>no reemplazan</strong> la atención psicológica o psiquiátrica profesional.
+              Las conversaciones con Uwu <strong>no reemplazan</strong> la atención psicológica o psiquiátrica profesional.
             </p>
           </div>
         </div>
@@ -115,7 +116,7 @@ const handleAccept = async () => {
         <ul class="space-y-2 text-slate-600">
           <li class="flex items-start space-x-2">
             <span class="text-green-500 font-bold mt-0.5">•</span>
-            <span>Tus conversaciones con PsicoRapport se almacenan de forma encriptada y solo son accesibles por ti.</span>
+            <span>Tus conversaciones con Uwu se almacenan de forma encriptada y solo son accesibles por ti.</span>
           </li>
           <li class="flex items-start space-x-2">
             <span class="text-green-500 font-bold mt-0.5">•</span>

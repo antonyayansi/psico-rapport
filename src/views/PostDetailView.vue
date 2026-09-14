@@ -5,6 +5,7 @@ import { ArrowLeft, Send, Sparkles, X, Heart, Search, Lock } from 'lucide-vue-ne
 import { db } from '../firebase'
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
+import { isPetAuthorName } from '../pet'
 
 const router = useRouter()
 const route = useRoute()
@@ -221,8 +222,12 @@ const isLikedByUser = () => {
                     </h3>
 
                     <div v-for="c in post.comments" :key="c.id" class="flex space-x-3 px-1 animate-fade-in-up">
-                        <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs border border-amber-200 dark:border-amber-800 mt-1 flex-shrink-0"
-                            v-if="c.authorName.includes('PsicoRapport')">🐻</div>
+                        <img
+                            v-if="c.isPet || isPetAuthorName(c.authorName)"
+                            src="/emociones/calma.png"
+                            :alt="c.authorName"
+                            class="w-8 h-8 rounded-[28%] object-cover mt-1 flex-shrink-0"
+                        />
                         <img v-else-if="c.authorPhotoUrl" :src="c.authorPhotoUrl"
                             class="w-8 h-8 rounded-full object-cover mt-1 flex-shrink-0 border border-slate-200 dark:border-slate-700" />
                         <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300 text-xs mt-1 flex-shrink-0 font-bold uppercase"
@@ -230,11 +235,11 @@ const isLikedByUser = () => {
 
                         <div class="flex-1 bg-white dark:bg-slate-900 p-4 rounded-3xl rounded-tl-sm border border-slate-100 dark:border-slate-800 relative">
                             <!-- Si es de la IA -->
-                            <Sparkles v-if="c.authorName.includes('PsicoRapport')"
+                            <Sparkles v-if="c.isPet || isPetAuthorName(c.authorName)"
                                 class="w-3 h-3 text-amber-400 absolute top-3 right-4 opacity-50" />
 
                             <span class="text-xs font-bold block text-slate-800 dark:text-slate-200 mb-1"
-                                :class="{ 'text-amber-700 dark:text-amber-400': c.authorName.includes('PsicoRapport') }">{{ c.authorName }}</span>
+                                :class="{ 'text-amber-700 dark:text-amber-400': c.isPet || isPetAuthorName(c.authorName) }">{{ c.authorName }}</span>
 
                             <div v-if="c.type === 'gif'"
                                 class="mt-2 text-center rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800">

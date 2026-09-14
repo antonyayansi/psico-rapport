@@ -12,6 +12,7 @@ import { useConfirm } from 'primevue/useconfirm'
 import ConfirmDialog from 'primevue/confirmdialog'
 import PetAvatar from '../components/PetAvatar.vue'
 import { buildStageSystemPrompt, STAGE_META } from '../transition'
+import { DEFAULT_PET_NAME, resolveEmotion } from '../pet'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -69,11 +70,15 @@ const systemPrompt = computed(() => ({
     role: 'system',
     content: buildStageSystemPrompt(
       authStore.transitionStage,
-      authStore.pet?.name || 'PsicoRapport'
+      authStore.pet?.name || DEFAULT_PET_NAME
     )
 }))
 
-const petDisplayName = computed(() => authStore.pet?.name || 'PsicoRapport')
+const petDisplayName = computed(() => authStore.pet?.name || DEFAULT_PET_NAME)
+const petFaceSrc = computed(() => resolveEmotion({
+    moodKey: authStore.pet?.moodKey,
+    moodLevel: authStore.pet?.moodLevel
+}).src)
 const stageLabel = computed(() => (STAGE_META[authStore.transitionStage] || STAGE_META.dependency).short)
 
 // Convert Firestore history to OpenAI format (text-only for context window)
@@ -220,7 +225,7 @@ const scrollToBottom = () => {
 
 const deleteChat = async () => {
     confirm.require({
-        message: '¿Estás seguro de que quieres borrar todo el historial de chat con PsicoRapport?',
+        message: `¿Estás seguro de que quieres borrar todo el historial de chat con ${petDisplayName.value}?`,
         header: 'Borrar conversación',
         icon: 'pi pi-trash',
         rejectLabel: 'Cancelar',
@@ -261,7 +266,7 @@ onMounted(() => {
         messages.value = [messages.value[0], ...loadedMessages]
 
         if (loadedMessages.length === 0) {
-            sendMessageToDB("¡Hola! Soy Uwu. 🐻 Me alegra mucho que estés aquí. Cuéntame, ¿cómo te sientes en este momento?", 'uwu')
+            sendMessageToDB(`¡Hola! Soy ${petDisplayName.value}. Me alegra mucho que estés aquí. Cuéntame, ¿cómo te sientes en este momento?`, 'uwu')
         }
 
         scrollToBottom()
@@ -279,10 +284,8 @@ onMounted(() => {
                 class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end p-4 pb-8">
                 <div class="w-full bg-white dark:bg-slate-900 rounded-3xl p-6 space-y-4 shadow-xl">
                     <div class="text-center">
-                        <div class="w-14 h-14 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <HeartPulse class="w-7 h-7 text-red-500" />
-                        </div>
-                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">PsicoRapport está aquí contigo 🐻</h3>
+                        <img src="/emociones/temeroso.png" :alt="petDisplayName" class="w-16 h-16 mx-auto mb-3 rounded-[28%] object-cover" />
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ petDisplayName }} está aquí contigo</h3>
                         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                             Noto que estás pasando por un momento muy difícil. Tu vida importa, y mereces apoyo real ahora mismo.
                         </p>
@@ -316,7 +319,7 @@ onMounted(() => {
 
                     <button @click="showCrisisOverlay = false"
                         class="w-full py-3 text-slate-500 dark:text-slate-400 text-sm font-medium">
-                        Continuar con PsicoRapport
+                        Continuar con {{ petDisplayName }}
                     </button>
                 </div>
             </div>
@@ -335,7 +338,8 @@ onMounted(() => {
                             :name="petDisplayName"
                             :color="authStore.pet?.color || 'amber'"
                             :accessory="authStore.pet?.accessory || 'none'"
-                            :mood-level="authStore.pet?.moodLevel || 0"
+                            :mood-key="authStore.pet?.moodKey"
+                            :mood-level="authStore.pet?.moodLevel || 3"
                             size="sm"
                             :animate="false"
                         />
@@ -388,6 +392,11 @@ onMounted(() => {
 
                 <!-- Uwu Message -->
                 <div v-else-if="msg.sender === 'uwu'" class="max-w-[85%] flex items-end space-x-2 animate-fade-in-up">
+                    <img
+                        :src="petFaceSrc"
+                        :alt="petDisplayName"
+                        class="w-8 h-8 rounded-[28%] object-cover flex-shrink-0 mb-0.5"
+                    />
                     <div
                         class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-200 p-3.5 rounded-2xl rounded-bl-sm">
                         <div class="text-[0.95rem] leading-relaxed markdown-body"
@@ -417,6 +426,7 @@ onMounted(() => {
 
             <!-- Typing indicator -->
             <div v-if="isTyping" class="flex items-end space-x-2 w-full animate-fade-in-up">
+                <img :src="petFaceSrc" :alt="petDisplayName" class="w-8 h-8 rounded-[28%] object-cover flex-shrink-0" />
                 <div class="bg-white dark:bg-slate-900 border dark:border-slate-800 text-slate-500 p-4 rounded-2xl rounded-bl-sm flex space-x-1.5">
                     <span class="w-2 h-2 rounded-full bg-slate-300 animate-bounce"></span>
                     <span class="w-2 h-2 rounded-full bg-slate-300 animate-bounce" style="animation-delay: 150ms"></span>

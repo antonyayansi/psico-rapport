@@ -1,18 +1,19 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft, Frown, Meh, Smile, Wind, PhoneCall, AlertTriangle, Share2 } from 'lucide-vue-next'
+import { ArrowLeft, Wind, PhoneCall, AlertTriangle, Share2 } from 'lucide-vue-next'
 import { db } from '../firebase'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
 import { processUserAction } from '../gamification'
-import { updatePetMood } from '../pet'
+import { updatePetMood, PET_EMOTION_LIST, DEFAULT_PET_NAME, PET_EMOTIONS } from '../pet'
 import PetAvatar from '../components/PetAvatar.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const mood = ref(0)
+const mood = ref('')
 const savedMood = ref(false)
+const selectedEmotion = computed(() => PET_EMOTIONS[mood.value] || null)
 
 const privacyNote = computed(() => {
     if (authStore.moodShareConsent && authStore.chosenTherapistId) {
@@ -25,30 +26,31 @@ const privacyNote = computed(() => {
 })
 
 const saveMood = async () => {
-    if (mood.value > 0) {
-        try {
-            const userId = authStore.user.uid
-            await addDoc(collection(db, 'estados_animo'), {
-                id_usuario: userId,
-                nivel_animo: mood.value,
-                fecha: serverTimestamp(),
-                sharedWithTherapist: authStore.moodShareConsent === true,
-                therapistId: authStore.moodShareConsent ? (authStore.chosenTherapistId || null) : null
-            })
+    if (!selectedEmotion.value) return
+    try {
+        const userId = authStore.user.uid
+        const emotion = selectedEmotion.value
+        await addDoc(collection(db, 'estados_animo'), {
+            id_usuario: userId,
+            nivel_animo: emotion.level,
+            emocion: emotion.id,
+            fecha: serverTimestamp(),
+            sharedWithTherapist: authStore.moodShareConsent === true,
+            therapistId: authStore.moodShareConsent ? (authStore.chosenTherapistId || null) : null
+        })
 
-            await updatePetMood(userId, mood.value)
-            await processUserAction(userId, 'mood')
-            await authStore.loadUserProfile(userId)
+        await updatePetMood(userId, emotion.id)
+        await processUserAction(userId, 'mood')
+        await authStore.loadUserProfile(userId)
 
-            savedMood.value = true
-            setTimeout(() => {
-                savedMood.value = false
-                mood.value = 0
-            }, 3000)
-        } catch (error) {
-            console.error("Error al guardar estado de ánimo:", error)
-            alert("Hubo un error al guardar tu ánimo.")
-        }
+        savedMood.value = true
+        setTimeout(() => {
+            savedMood.value = false
+            mood.value = ''
+        }, 3000)
+    } catch (error) {
+        console.error("Error al guardar estado de ánimo:", error)
+        alert("Hubo un error al guardar tu ánimo.")
     }
 }
 
@@ -85,10 +87,11 @@ const showCrisisAlert = ref(false)
                     </div>
                     <PetAvatar
                         v-if="authStore.pet || mood"
-                        :name="authStore.pet?.name || 'PsicoRapport'"
+                        :name="authStore.pet?.name || DEFAULT_PET_NAME"
                         :color="authStore.pet?.color || 'amber'"
                         :accessory="authStore.pet?.accessory || 'none'"
-                        :mood-level="mood || authStore.pet?.moodLevel || 0"
+                        :mood-key="mood || authStore.pet?.moodKey"
+                        :mood-level="authStore.pet?.moodLevel || 3"
                         size="sm"
                         :animate="false"
                     />
@@ -101,33 +104,25 @@ const showCrisisAlert = ref(false)
                     <Share2 class="w-3.5 h-3.5" /> Gestionar consentimiento de ánimo
                 </button>
 
-                <div class="flex justify-between items-center mb-6 relative z-10">
-                    <button @click="mood = 1"
-                        :class="mood === 1 ? 'scale-110 bg-red-100 border-red-200' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 opacity-70 hover:opacity-100'"
-                        class="p-3 rounded-2xl border-2 transition-all">
-                        <Frown class="w-10 h-10 text-red-500" />
-                        <span
-                            class="block text-xs font-bold text-slate-500 dark:text-slate-400 mt-2 text-center">Difícil</span>
-                    </button>
-
-                    <button @click="mood = 3"
-                        :class="mood === 3 ? 'scale-110 bg-amber-100 border-amber-200' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 opacity-70 hover:opacity-100'"
-                        class="p-3 rounded-2xl border-2 transition-all">
-                        <Meh class="w-10 h-10 text-amber-500" />
-                        <span
-                            class="block text-xs font-bold text-slate-500 dark:text-slate-400 mt-2 text-center">Regular</span>
-                    </button>
-
-                    <button @click="mood = 5"
-                        :class="mood === 5 ? 'scale-110 bg-green-100 border-green-200' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 opacity-70 hover:opacity-100'"
-                        class="p-3 rounded-2xl border-2 transition-all">
-                        <Smile class="w-10 h-10 text-green-500" />
-                        <span
-                            class="block text-xs font-bold text-slate-500 dark:text-slate-400 mt-2 text-center">Bien</span>
+                <div class="grid grid-cols-3 md:grid-cols-6 gap-2.5 mb-6 relative z-10">
+                    <button
+                        v-for="emotion in PET_EMOTION_LIST"
+                        :key="emotion.id"
+                        type="button"
+                        @click="mood = emotion.id"
+                        class="flex flex-col items-center p-2.5 rounded-2xl border-2 transition-all active:scale-95"
+                        :class="mood === emotion.id
+                            ? 'scale-[1.03] border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
+                            : 'border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 opacity-80 hover:opacity-100'"
+                    >
+                        <img :src="emotion.src" :alt="emotion.label" class="w-14 h-14 object-cover rounded-2xl" />
+                        <span class="block text-[0.7rem] font-extrabold text-slate-600 dark:text-slate-300 mt-1.5 text-center">
+                            {{ emotion.label }}
+                        </span>
                     </button>
                 </div>
 
-                <button :disabled="mood === 0 || savedMood" @click="saveMood"
+                <button :disabled="!mood || savedMood" @click="saveMood"
                     class="w-full bg-slate-900 dark:bg-slate-100 dark:text-slate-900 disabled:bg-slate-200 dark:disabled:bg-slate-700 text-white disabled:text-slate-400 dark:disabled:text-slate-500 py-3 rounded-xl font-bold transition-all disabled:cursor-not-allowed">
                     {{ savedMood ? '¡Guardado!' : 'Guardar en mi diario' }}
                 </button>

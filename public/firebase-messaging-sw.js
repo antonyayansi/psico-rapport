@@ -22,10 +22,10 @@ messaging.onBackgroundMessage((payload) => {
 
     const { title, body } = payload.notification || {};
 
-    self.registration.showNotification(title || 'uwu 🐻', {
+    self.registration.showNotification(title || 'Uwu', {
         body: body || 'Tienes una nueva notificación',
-        icon: '/favicon.svg',
-        badge: '/favicon.svg',
+        icon: '/emociones/feliz.png',
+        badge: '/emociones/feliz.png',
         vibrate: [200, 100, 200],
         data: {
             url: payload.webpush?.fcmOptions?.link || '/',

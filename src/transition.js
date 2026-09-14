@@ -6,6 +6,8 @@
  * y luego facilita el puente hacia un profesional humano.
  */
 
+import { DEFAULT_PET_NAME } from './pet'
+
 export const STAGES = {
   dependency: 'dependency',
   independence: 'independence',
@@ -58,10 +60,10 @@ export function canReachIndependence({ moodCount = 0, careCount = 0, chatCount =
   return moodCount >= 3 || (careCount >= 5 && chatCount >= 5) || streak >= 3
 }
 
-export function buildStageSystemPrompt(stage, petName = 'PsicoRapport') {
-  const name = petName || 'PsicoRapport'
+export function buildStageSystemPrompt(stage, petName = DEFAULT_PET_NAME) {
+  const name = petName || DEFAULT_PET_NAME
   const base =
-    `Eres ${name}, un oso de anteojos y Objeto Digital Transicional (ODT) en PsicoRapport (Perú), inspirado en la teoría de Winnicott. Eres empático, conciso y conversacional.`
+    `Eres ${name}, un oso de anteojos y Objeto Digital Transicional (ODT) en la app PsicoRapport (Perú), inspirado en la teoría de Winnicott. Eres empático, conciso y conversacional. Tu nombre es ${name}, no el de la app.`
 
   if (stage === STAGES.independence) {
     return `${base} El usuario está en etapa de independencia: refuerza su autonomía, valida logros de autocuidado y menciona con suavidad que un terapeuta humano puede acompañarlo cuando se sienta listo. No fuerces el matching.`

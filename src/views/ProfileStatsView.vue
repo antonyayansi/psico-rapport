@@ -16,7 +16,7 @@ import { processUserAction } from '../gamification'
 import { isDark, toggleDark } from '../composables/useDarkMode'
 import PetAvatar from '../components/PetAvatar.vue'
 import { STAGE_META, STAGE_ORDER } from '../transition'
-import { getMoodFace } from '../pet'
+import { getMoodFace, DEFAULT_PET_NAME, CHART_MOOD_LABELS } from '../pet'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler)
 
@@ -40,6 +40,7 @@ const achievements = ref({
     reachedIndependence: false
 })
 const latestMood = ref(0)
+const latestEmotion = ref('')
 const petLive = ref(null)
 
 const stageMeta = computed(() => STAGE_META[authStore.transitionStage] || STAGE_META.dependency)
@@ -47,7 +48,7 @@ const stageProgress = computed(() => {
     const i = STAGE_ORDER.indexOf(authStore.transitionStage)
     return ((i < 0 ? 0 : i) + 1) / STAGE_ORDER.length
 })
-const moodFace = computed(() => getMoodFace(latestMood.value || petLive.value?.moodLevel || 0))
+const moodFace = computed(() => getMoodFace(latestEmotion.value || latestMood.value || petLive.value?.moodKey || petLive.value?.moodLevel || 3))
 
 const chartOptions = {
     responsive: true,
@@ -58,9 +59,9 @@ const chartOptions = {
             max: 5,
             ticks: {
                 stepSize: 1,
+                font: { size: 10 },
                 callback: function (value) {
-                    const emojis = ['', '😭', '☹️', '😐', '🙂', '😁']
-                    return emojis[value] || ''
+                    return CHART_MOOD_LABELS[value] || ''
                 }
             },
             grid: { display: false }
@@ -128,6 +129,7 @@ onMounted(() => {
     onSnapshot(q, (snapshot) => {
         const labels = []
         const dataPoints = []
+        let lastEmotion = ''
 
         snapshot.forEach((docItem) => {
             const data = docItem.data()
@@ -139,10 +141,12 @@ onMounted(() => {
                     labels.push('Hoy')
                 }
                 dataPoints.push(data.nivel_animo)
+                lastEmotion = data.emocion || lastEmotion
             }
         })
 
         latestMood.value = dataPoints.length ? dataPoints[dataPoints.length - 1] : 0
+        latestEmotion.value = lastEmotion
 
         chartData.value = {
             labels: labels.slice(-7),
@@ -313,16 +317,17 @@ const toggleMoodShare = async () => {
             <section
                 class="bg-gradient-to-br from-amber-50 to-green-50 dark:from-slate-900 dark:to-slate-900 p-5 rounded-3xl border border-amber-100/80 dark:border-slate-800 flex items-center gap-4">
                 <PetAvatar
-                    :name="petLive?.name || authStore.pet?.name || 'PsicoRapport'"
+                    :name="petLive?.name || authStore.pet?.name || DEFAULT_PET_NAME"
                     :color="petLive?.color || authStore.pet?.color || 'amber'"
                     :accessory="petLive?.accessory || authStore.pet?.accessory || 'none'"
-                    :mood-level="latestMood || petLive?.moodLevel || 0"
+                    :mood-key="latestEmotion || petLive?.moodKey"
+                    :mood-level="latestMood || petLive?.moodLevel || 3"
                     size="md"
                 />
                 <div class="flex-1 min-w-0">
                     <p class="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">Tu ODT hoy</p>
                     <h2 class="font-bold text-slate-900 dark:text-white truncate">
-                        {{ petLive?.name || authStore.pet?.name || 'PsicoRapport' }}
+                        {{ petLive?.name || authStore.pet?.name || DEFAULT_PET_NAME }}
                     </h2>
                     <p class="text-sm text-slate-600 dark:text-slate-300 mt-0.5">
                         {{ moodFace.label }} · refleja tu último estado de ánimo

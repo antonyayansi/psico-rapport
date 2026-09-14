@@ -6,8 +6,11 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import '@/composables/useDarkMode' // inicializa useDark al arrancar la app
 import { initFCM } from './composables/useFCM'
+import { useDesktopGate } from './composables/useDesktopGate'
+import DesktopWelcome from './components/DesktopWelcome.vue'
 
 const router = useRouter()
+const { isDesktop } = useDesktopGate()
 
 onMounted(() => {
     // Listen for auth state changes
@@ -23,10 +26,11 @@ onMounted(() => {
 </script>
 
 <template>
-    <div dir="ltr"
+    <DesktopWelcome v-if="isDesktop" />
+    <div v-else dir="ltr"
         class="h-[100dvh] bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased overflow-hidden flex flex-col items-center">
         <div
-            class="w-full max-w-md bg-white dark:bg-slate-900 dark:border-x dark:border-slate-800 h-[100dvh] relative flex flex-col">
+            class="w-full max-w-md md:max-w-2xl lg:max-w-3xl bg-white dark:bg-slate-900 dark:border-x dark:border-slate-800 h-[100dvh] relative flex flex-col shadow-sm md:shadow-xl">
             <div class="flex-1 overflow-hidden relative flex flex-col">
                 <router-view v-slot="{ Component }">
                     <transition name="fade" mode="out-in">

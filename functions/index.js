@@ -112,7 +112,8 @@ exports.notifyOnComment = onDocumentUpdated(
         // Detectar si el commenter es el mismo autor (comparar nombre como fallback)
         // Idealmente el comentario tendría authorId, pero actualmente solo tiene authorName
         // Usamos el nombre de Uwu para no notificar el bot
-        if (newComment.authorName?.includes('Uwu')) return null;
+        if (newComment.isPet) return null;
+        if (/uwu|psico\s?rapport/i.test(newComment.authorName || '')) return null;
 
         // Leer el FCM token del autor del post
         const userDoc = await db.collection('users').doc(authorId).get();
