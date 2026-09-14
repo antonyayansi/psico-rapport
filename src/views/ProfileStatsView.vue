@@ -264,7 +264,7 @@ const toggleMoodShare = async () => {
 
 <template>
     <div dir="ltr"
-        class="h-full flex flex-col bg-slate-50 dark:bg-slate-950 relative flex-1 text-slate-800 dark:text-slate-100 overflow-y-auto">
+        class="h-full flex flex-col bg-sage-50 dark:bg-slate-950 relative flex-1 text-slate-800 dark:text-slate-100 overflow-y-auto">
         <div class="p-6 space-y-6 pb-24">
             <!-- Profile Header -->
             <div class="flex items-center justify-between">
@@ -315,7 +315,7 @@ const toggleMoodShare = async () => {
 
             <!-- Pet reflects mood -->
             <section
-                class="bg-gradient-to-br from-amber-50 to-green-50 dark:from-slate-900 dark:to-slate-900 p-5 rounded-3xl border border-amber-100/80 dark:border-slate-800 flex items-center gap-4">
+                class="card-soft p-5 flex items-center gap-4">
                 <PetAvatar
                     :name="petLive?.name || authStore.pet?.name || DEFAULT_PET_NAME"
                     :color="petLive?.color || authStore.pet?.color || 'amber'"
@@ -325,12 +325,12 @@ const toggleMoodShare = async () => {
                     size="md"
                 />
                 <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">Tu ODT hoy</p>
-                    <h2 class="font-bold text-slate-900 dark:text-white truncate">
-                        {{ petLive?.name || authStore.pet?.name || DEFAULT_PET_NAME }}
+                    <p class="text-xs tracking-[0.14em] uppercase text-green-700/70 font-semibold">Hoy con {{ petLive?.name || authStore.pet?.name || DEFAULT_PET_NAME }}</p>
+                    <h2 class="font-display text-xl text-ink truncate">
+                        {{ moodFace.label }}
                     </h2>
-                    <p class="text-sm text-slate-600 dark:text-slate-300 mt-0.5">
-                        {{ moodFace.label }} · refleja tu último estado de ánimo
+                    <p class="text-sm text-slate-500 mt-0.5">
+                        Así se siente {{ petLive?.name || authStore.pet?.name || DEFAULT_PET_NAME }} ahora
                     </p>
                     <button
                         @click="router.push('/pet')"

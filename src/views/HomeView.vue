@@ -1,6 +1,5 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { Sparkles } from 'lucide-vue-next'
 import { DEFAULT_PET_NAME } from '../pet'
 
 const router = useRouter()
@@ -8,53 +7,27 @@ const router = useRouter()
 
 <template>
     <div dir="ltr"
-        class="h-full flex flex-col items-center justify-center bg-gradient-to-br from-green-800 to-green-950 p-6 flex-1 text-white relative">
-        <!-- Decoración de fondo -->
-        <div class="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
-            <div class="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-green-400 blur-3xl"></div>
-            <div class="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-emerald-400 blur-3xl"></div>
-        </div>
-
-        <div class="flex flex-col items-center z-10 space-y-6">
+        class="h-full flex flex-col items-center justify-between bg-sage-50 dark:bg-slate-950 p-8 flex-1 text-ink relative">
+        <div class="flex-1 flex flex-col items-center justify-center z-10">
             <img
-                src="/emociones/feliz.png"
+                src="/emociones/calma.png"
                 :alt="DEFAULT_PET_NAME"
-                class="w-32 h-32 object-cover rounded-[1.75rem] shadow-[0_16px_40px_rgba(16,185,129,0.28)] animate-fade-in-up"
+                class="w-44 h-44 object-cover rounded-[2.2rem] mb-8"
             />
-
-            <div class="text-center space-y-2 animate-fade-in-up" style="animation-delay: 100ms;">
-                <h1 class="text-4xl font-extrabold tracking-tight">Psico<span class="text-green-300">Rapport</span></h1>
-                <p class="text-green-100 text-lg">Tu espacio seguro para sanar.</p>
-                <p class="text-green-200/90 text-sm font-semibold">con {{ DEFAULT_PET_NAME }}</p>
-            </div>
-
-            <div class="pt-8 w-full animate-fade-in-up" style="animation-delay: 200ms;">
-                <button @click="router.push('/login')"
-                    class="w-full flex items-center justify-center space-x-2 bg-white text-green-900 py-4 px-6 rounded-2xl font-bold text-lg hover:bg-green-50 transition-all hover:scale-105 active:scale-95">
-                    <span>Comenzar mi viaje</span>
-                    <Sparkles class="w-5 h-5 text-green-600" />
-                </button>
-            </div>
+            <p class="text-xs tracking-[0.2em] uppercase text-green-700/70 dark:text-slate-400 font-semibold mb-3">PsicoRapport</p>
+            <h1 class="font-display text-[2.15rem] text-center leading-[1.15] max-w-[14ch]">
+                Respira.<br />Este es un espacio seguro.
+            </h1>
+            <p class="text-slate-500 text-base text-center mt-4 max-w-[28ch] leading-relaxed">
+                {{ DEFAULT_PET_NAME }} te acompaña a registrar cómo te sientes, sin prisa y sin juicio.
+            </p>
         </div>
 
+        <div class="w-full z-10 pb-4">
+            <button @click="router.push('/login')"
+                class="w-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 py-4 rounded-full font-semibold text-base active:scale-[0.98] transition-transform">
+                Empezar
+            </button>
+        </div>
     </div>
 </template>
-
-<style scoped>
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.animate-fade-in-up {
-    animation: fadeInUp 0.8s ease forwards;
-    opacity: 0;
-}
-</style>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -11,7 +11,7 @@ import {
 import { processUserAction } from '../gamification'
 import { STAGE_META } from '../transition'
 import {
-  ArrowLeft, Utensils, Gamepad2, Moon, Save, Sparkles
+  ArrowLeft, Utensils, Gamepad2, Moon, Save
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -87,36 +87,31 @@ const care = async (action) => {
 }
 
 const barClass = (v) => {
-  if (v >= 70) return 'bg-green-500'
-  if (v >= 40) return 'bg-amber-400'
-  return 'bg-red-400'
+  if (v >= 70) return 'bg-green-600'
+  if (v >= 40) return 'bg-amber-300'
+  return 'bg-rose-300'
 }
 </script>
 
 <template>
-  <div dir="ltr" class="h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-y-auto">
-    <header class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center p-4 px-6 sticky top-0 z-10">
-      <button @click="router.back()" class="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400">
-        <ArrowLeft class="w-6 h-6" />
+  <div dir="ltr" class="h-full flex flex-col bg-sage-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-y-auto">
+    <header class="flex items-center p-4 px-5">
+      <button @click="router.back()" class="p-2 -ml-2 rounded-full text-slate-500">
+        <ArrowLeft class="w-5 h-5" />
       </button>
-      <h1 class="font-bold text-xl ml-2">Mi mascota</h1>
+      <h1 class="font-display text-xl ml-1">{{ name }}</h1>
     </header>
 
-    <div class="p-5 space-y-6 pb-24">
-      <!-- Stage banner (Winnicott) -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-4">
-        <div class="flex items-center gap-2 mb-1">
-          <Sparkles class="w-4 h-4 text-green-600" />
-          <span class="text-xs font-bold uppercase tracking-wide text-green-700 dark:text-green-400">
-            Etapa: {{ stageMeta.label }}
-          </span>
-        </div>
+    <div class="p-5 space-y-5 pb-24">
+      <div class="card-soft p-4">
+        <p class="text-xs tracking-[0.14em] uppercase text-green-700/70 dark:text-slate-400 font-semibold mb-1">
+          Etapa: {{ stageMeta.label }}
+        </p>
         <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{{ stageMeta.description }}</p>
         <p v-if="stageMeta.nextHint" class="text-xs text-slate-400 mt-2">{{ stageMeta.nextHint }}</p>
       </div>
 
-      <!-- Preview -->
-      <div class="flex flex-col items-center py-4">
+      <div class="flex flex-col items-center py-2">
         <PetAvatar
           :name="name"
           :color="color"
@@ -126,12 +121,11 @@ const barClass = (v) => {
           size="lg"
           show-name
         />
-        <p class="text-xs text-slate-400 mt-2">{{ name }} · refleja tu ánimo</p>
+        <p class="text-xs text-slate-400 mt-1">Refleja cómo te sientes hoy</p>
       </div>
 
-      <!-- Stats Pou-style -->
-      <section class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-5 space-y-3">
-        <h2 class="font-bold text-slate-800 dark:text-slate-100">Cuidado</h2>
+      <section class="card-soft p-5 space-y-3">
+        <h2 class="font-display text-lg text-ink">Cuidado</h2>
         <div v-for="stat in [
           { key: 'Hambre', val: hunger },
           { key: 'Felicidad', val: happiness },
@@ -149,21 +143,21 @@ const barClass = (v) => {
           <button
             :disabled="!!caring"
             @click="care('feed')"
-            class="flex flex-col items-center gap-1 py-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 text-xs font-bold active:scale-95 disabled:opacity-50"
+            class="flex flex-col items-center gap-1 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium active:scale-95 disabled:opacity-50"
           >
             <Utensils class="w-5 h-5" /> Alimentar
           </button>
           <button
             :disabled="!!caring"
             @click="care('play')"
-            class="flex flex-col items-center gap-1 py-3 rounded-2xl bg-sky-50 dark:bg-sky-900/20 text-sky-800 dark:text-sky-300 text-xs font-bold active:scale-95 disabled:opacity-50"
+            class="flex flex-col items-center gap-1 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium active:scale-95 disabled:opacity-50"
           >
             <Gamepad2 class="w-5 h-5" /> Jugar
           </button>
           <button
             :disabled="!!caring"
             @click="care('rest')"
-            class="flex flex-col items-center gap-1 py-3 rounded-2xl bg-violet-50 dark:bg-violet-900/20 text-violet-800 dark:text-violet-300 text-xs font-bold active:scale-95 disabled:opacity-50"
+            class="flex flex-col items-center gap-1 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium active:scale-95 disabled:opacity-50"
           >
             <Moon class="w-5 h-5" /> Descansar
           </button>
@@ -171,15 +165,15 @@ const barClass = (v) => {
       </section>
 
       <!-- Customize -->
-      <section class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-5 space-y-4">
-        <h2 class="font-bold text-slate-800 dark:text-slate-100">Personalizar</h2>
+      <section class="card-soft p-5 space-y-4">
+        <h2 class="font-display text-lg text-ink">Personalizar</h2>
 
         <label class="block">
           <span class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1.5 block">Nombre</span>
           <input
             v-model="name"
             maxlength="24"
-            class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-green-500"
+            class="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border-0 outline-none focus:ring-2 focus:ring-green-600/25"
             placeholder="Nombre de tu compañero"
           />
         </label>
@@ -208,8 +202,8 @@ const barClass = (v) => {
               @click="accessory = a.id"
               class="py-2.5 rounded-xl border-2 text-xs font-bold transition-all"
               :class="accessory === a.id
-                ? 'border-green-500 bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                : 'border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300'"
+                ? 'border-green-600/30 bg-green-50 text-green-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100'
+                : 'border-transparent bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300'"
             >
               <span class="text-base">{{ a.emoji || '—' }}</span>
               <span class="block mt-0.5">{{ a.label }}</span>
@@ -220,7 +214,7 @@ const barClass = (v) => {
         <button
           :disabled="saving"
           @click="save"
-          class="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3.5 rounded-2xl font-bold active:scale-95 disabled:opacity-50"
+          class="btn-quiet flex items-center justify-center gap-2"
         >
           <Save class="w-5 h-5" />
           {{ savedFlash ? '¡Guardado!' : 'Guardar look' }}

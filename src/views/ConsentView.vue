@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { db } from '../firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
-import { Shield, ChevronDown, CheckCircle2, AlertTriangle, Heart, Lock } from 'lucide-vue-next'
+import { ChevronDown, CheckCircle2, AlertTriangle, Heart, Lock } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -49,22 +49,19 @@ const handleAccept = async () => {
 </script>
 
 <template>
-  <div dir="ltr" class="h-full flex flex-col bg-white text-slate-800 overflow-hidden">
+  <div dir="ltr" class="h-full flex flex-col bg-sage-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden">
     <!-- Header -->
-    <div class="flex-none bg-green-600 text-white px-6 py-8 text-center">
-      <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-        <Shield class="w-8 h-8 text-white" />
-      </div>
-      <h1 class="text-2xl font-bold mb-1">Consentimiento Informado</h1>
-      <p class="text-green-100 text-sm">PsicoRapport — Versión 1.0</p>
+    <div class="flex-none bg-green-700 dark:bg-slate-900 text-white px-6 py-8 text-center">
+      <h1 class="font-display text-2xl mb-1">Consentimiento informado</h1>
+      <p class="text-green-100/90 dark:text-slate-400 text-sm">Léelo con calma. No hay prisa.</p>
     </div>
 
     <!-- Scrollable Content -->
     <div class="flex-1 overflow-y-auto p-6 space-y-6 text-sm" @scroll="onScroll">
       <!-- Intro -->
-      <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex space-x-3">
-        <Lock class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-        <p class="text-blue-800 leading-relaxed">
+      <div class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-2xl p-4 flex space-x-3">
+        <Lock class="w-5 h-5 text-blue-600 dark:text-slate-400 flex-shrink-0 mt-0.5" />
+        <p class="text-blue-800 dark:text-slate-300 leading-relaxed">
           Antes de comenzar, es necesario que leas y aceptes los siguientes términos. Esta información es fundamental
           para que puedas usar PsicoRapport de forma segura e informada.
         </p>
@@ -73,7 +70,7 @@ const handleAccept = async () => {
       <!-- Section 1 -->
       <section>
         <h2 class="font-bold text-slate-900 text-base mb-3 flex items-center space-x-2">
-          <span class="w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+          <span class="w-6 h-6 bg-green-100 dark:bg-slate-800 text-green-700 dark:text-slate-200 rounded-full flex items-center justify-center text-xs font-bold">1</span>
           <span>¿Qué es PsicoRapport?</span>
         </h2>
         <p class="text-slate-600 leading-relaxed">
@@ -88,10 +85,10 @@ const handleAccept = async () => {
       <!-- Section 2 -->
       <section>
         <h2 class="font-bold text-slate-900 text-base mb-3 flex items-center space-x-2">
-          <span class="w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+          <span class="w-6 h-6 bg-green-100 dark:bg-slate-800 text-green-700 dark:text-slate-200 rounded-full flex items-center justify-center text-xs font-bold">2</span>
           <span>Naturaleza del servicio</span>
         </h2>
-        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-3">
+        <div class="bg-amber-50 dark:bg-slate-900 border border-amber-200 dark:border-slate-800 rounded-xl p-4 mb-3">
           <div class="flex items-start space-x-2">
             <AlertTriangle class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
             <p class="text-amber-800 text-xs leading-relaxed">
@@ -110,7 +107,7 @@ const handleAccept = async () => {
       <!-- Section 3 -->
       <section>
         <h2 class="font-bold text-slate-900 text-base mb-3 flex items-center space-x-2">
-          <span class="w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+          <span class="w-6 h-6 bg-green-100 dark:bg-slate-800 text-green-700 dark:text-slate-200 rounded-full flex items-center justify-center text-xs font-bold">3</span>
           <span>Privacidad y confidencialidad</span>
         </h2>
         <ul class="space-y-2 text-slate-600">
@@ -141,7 +138,7 @@ const handleAccept = async () => {
       <!-- Section 4 -->
       <section>
         <h2 class="font-bold text-slate-900 text-base mb-3 flex items-center space-x-2">
-          <span class="w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs font-bold">4</span>
+          <span class="w-6 h-6 bg-green-100 dark:bg-slate-800 text-green-700 dark:text-slate-200 rounded-full flex items-center justify-center text-xs font-bold">4</span>
           <span>Situaciones de crisis</span>
         </h2>
         <div class="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
@@ -152,7 +149,7 @@ const handleAccept = async () => {
               a recursos de ayuda inmediata.
             </p>
           </div>
-          <div class="bg-white rounded-xl p-3 space-y-1 text-xs">
+          <div class="bg-white dark:bg-slate-900 rounded-xl p-3 space-y-1 text-xs">
             <p class="font-bold text-slate-800">🆘 Líneas de crisis disponibles 24/7:</p>
             <p class="text-slate-600">• MINSA — Línea 113 (Perú)</p>
             <p class="text-slate-600">• SISOL — 0800-1-5200 (gratuito)</p>
@@ -164,7 +161,7 @@ const handleAccept = async () => {
       <!-- Section 5 -->
       <section>
         <h2 class="font-bold text-slate-900 text-base mb-3 flex items-center space-x-2">
-          <span class="w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs font-bold">5</span>
+          <span class="w-6 h-6 bg-green-100 dark:bg-slate-800 text-green-700 dark:text-slate-200 rounded-full flex items-center justify-center text-xs font-bold">5</span>
           <span>Uso del foro comunitario</span>
         </h2>
         <p class="text-slate-600 leading-relaxed">
@@ -178,7 +175,7 @@ const handleAccept = async () => {
       <!-- Section 6 -->
       <section>
         <h2 class="font-bold text-slate-900 text-base mb-3 flex items-center space-x-2">
-          <span class="w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs font-bold">6</span>
+          <span class="w-6 h-6 bg-green-100 dark:bg-slate-800 text-green-700 dark:text-slate-200 rounded-full flex items-center justify-center text-xs font-bold">6</span>
           <span>Menores de edad</span>
         </h2>
         <p class="text-slate-600 leading-relaxed">
@@ -191,7 +188,7 @@ const handleAccept = async () => {
       <!-- Section 7 -->
       <section>
         <h2 class="font-bold text-slate-900 text-base mb-3 flex items-center space-x-2">
-          <span class="w-6 h-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center text-xs font-bold">7</span>
+          <span class="w-6 h-6 bg-green-100 dark:bg-slate-800 text-green-700 dark:text-slate-200 rounded-full flex items-center justify-center text-xs font-bold">7</span>
           <span>Revocación del consentimiento</span>
         </h2>
         <p class="text-slate-600 leading-relaxed">
@@ -209,50 +206,50 @@ const handleAccept = async () => {
 
       <!-- Checkboxes -->
       <div class="space-y-4 pt-2">
-        <h3 class="font-bold text-slate-900">Para continuar, confirma que:</h3>
+        <h3 class="font-bold text-slate-900 dark:text-slate-100">Para continuar, confirma que:</h3>
 
         <label class="flex items-start space-x-3 cursor-pointer group">
           <div class="mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors"
-            :class="checks.understand ? 'bg-green-600 border-green-600' : 'border-slate-300 group-hover:border-green-400'">
-            <CheckCircle2 v-if="checks.understand" class="w-4 h-4 text-white" />
+            :class="checks.understand ? 'bg-green-600 border-green-600 dark:bg-slate-100 dark:border-slate-100' : 'border-slate-300 dark:border-slate-600 group-hover:border-green-400'">
+            <CheckCircle2 v-if="checks.understand" class="w-4 h-4 text-white dark:text-slate-900" />
           </div>
           <input type="checkbox" v-model="checks.understand" class="hidden" />
-          <span class="text-slate-700 text-sm leading-snug">He leído y comprendido el presente Consentimiento Informado.</span>
+          <span class="text-slate-700 dark:text-slate-300 text-sm leading-snug">He leído y comprendido el presente Consentimiento Informado.</span>
         </label>
 
         <label class="flex items-start space-x-3 cursor-pointer group">
           <div class="mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors"
-            :class="checks.notTherapy ? 'bg-green-600 border-green-600' : 'border-slate-300 group-hover:border-green-400'">
-            <CheckCircle2 v-if="checks.notTherapy" class="w-4 h-4 text-white" />
+            :class="checks.notTherapy ? 'bg-green-600 border-green-600 dark:bg-slate-100 dark:border-slate-100' : 'border-slate-300 dark:border-slate-600 group-hover:border-green-400'">
+            <CheckCircle2 v-if="checks.notTherapy" class="w-4 h-4 text-white dark:text-slate-900" />
           </div>
           <input type="checkbox" v-model="checks.notTherapy" class="hidden" />
-          <span class="text-slate-700 text-sm leading-snug">Entiendo que PsicoRapport <strong>no reemplaza</strong> a un profesional de salud mental.</span>
+          <span class="text-slate-700 dark:text-slate-300 text-sm leading-snug">Entiendo que PsicoRapport <strong>no reemplaza</strong> a un profesional de salud mental.</span>
         </label>
 
         <label class="flex items-start space-x-3 cursor-pointer group">
           <div class="mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors"
-            :class="checks.dataPrivacy ? 'bg-green-600 border-green-600' : 'border-slate-300 group-hover:border-green-400'">
-            <CheckCircle2 v-if="checks.dataPrivacy" class="w-4 h-4 text-white" />
+            :class="checks.dataPrivacy ? 'bg-green-600 border-green-600 dark:bg-slate-100 dark:border-slate-100' : 'border-slate-300 dark:border-slate-600 group-hover:border-green-400'">
+            <CheckCircle2 v-if="checks.dataPrivacy" class="w-4 h-4 text-white dark:text-slate-900" />
           </div>
           <input type="checkbox" v-model="checks.dataPrivacy" class="hidden" />
-          <span class="text-slate-700 text-sm leading-snug">Acepto el tratamiento de mis datos personales conforme a la política de privacidad.</span>
+          <span class="text-slate-700 dark:text-slate-300 text-sm leading-snug">Acepto el tratamiento de mis datos personales conforme a la política de privacidad.</span>
         </label>
 
         <label class="flex items-start space-x-3 cursor-pointer group">
           <div class="mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors"
-            :class="checks.crisisAware ? 'bg-green-600 border-green-600' : 'border-slate-300 group-hover:border-green-400'">
-            <CheckCircle2 v-if="checks.crisisAware" class="w-4 h-4 text-white" />
+            :class="checks.crisisAware ? 'bg-green-600 border-green-600 dark:bg-slate-100 dark:border-slate-100' : 'border-slate-300 dark:border-slate-600 group-hover:border-green-400'">
+            <CheckCircle2 v-if="checks.crisisAware" class="w-4 h-4 text-white dark:text-slate-900" />
           </div>
           <input type="checkbox" v-model="checks.crisisAware" class="hidden" />
-          <span class="text-slate-700 text-sm leading-snug">En caso de crisis, contactaré a los servicios de emergencia o líneas de ayuda disponibles.</span>
+          <span class="text-slate-700 dark:text-slate-300 text-sm leading-snug">En caso de crisis, contactaré a los servicios de emergencia o líneas de ayuda disponibles.</span>
         </label>
       </div>
 
       <!-- Accept Button -->
       <button @click="handleAccept" :disabled="!allChecked() || isLoading"
-        class="w-full bg-green-600 text-white py-4 rounded-2xl font-bold text-base transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-green-700">
-        <span v-if="isLoading">Procesando...</span>
-        <span v-else>✅ Acepto y quiero comenzar</span>
+        class="btn-quiet">
+        <span v-if="isLoading">Un momento…</span>
+        <span v-else>Acepto y quiero comenzar</span>
       </button>
 
       <p class="text-center text-xs text-slate-400 pb-4">

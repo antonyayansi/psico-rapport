@@ -57,7 +57,7 @@ const accessoryClass = computed(() => {
         aria-hidden="true"
       >{{ accessoryMeta.emoji }}</span>
     </div>
-    <p v-if="showName" class="mt-2 text-sm font-extrabold tracking-tight text-slate-700 dark:text-slate-200">
+    <p v-if="showName" class="mt-2 text-sm font-medium text-slate-600 dark:text-slate-200">
       {{ name }}
     </p>
   </div>

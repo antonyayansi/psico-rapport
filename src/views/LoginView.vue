@@ -6,7 +6,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { signInWithCredential, GoogleAuthProvider } from 'firebase/auth'
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 import { Capacitor } from '@capacitor/core'
-import { ArrowLeft, LogIn } from 'lucide-vue-next'
+import { ArrowLeft } from 'lucide-vue-next'
 
 const router = useRouter()
 const errorMsg = ref('')
@@ -84,23 +84,24 @@ const handleGoogleLogin = async () => {
 </script>
 
 <template>
-    <div dir="ltr" class="h-full flex flex-col p-6 flex-1 bg-white relative text-slate-800">
+    <div dir="ltr" class="h-full flex flex-col p-6 flex-1 bg-sage-50 dark:bg-slate-950 relative text-slate-800 dark:text-slate-100">
         <button @click="router.back()"
-            class="absolute top-6 left-6 p-2 rounded-full hover:bg-slate-100 transition-colors">
-            <ArrowLeft class="w-6 h-6 text-slate-600" />
+            class="absolute top-6 left-6 p-2 rounded-full text-slate-500">
+            <ArrowLeft class="w-5 h-5" />
         </button>
 
         <div class="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full space-y-8">
             <div class="text-center space-y-3">
-                <img src="/emociones/feliz.png" alt="Uwu" class="w-24 h-24 mx-auto rounded-[1.5rem] object-cover shadow-md" />
-                <h2 class="text-3xl font-bold text-slate-900">Bienvenido de vuelta</h2>
-                <p class="text-slate-500 text-sm">Inicia sesión y continúa tu camino hacia el bienestar mental con Uwu.
+                <img src="/emociones/feliz.png" alt="Uwu" class="w-28 h-24 mx-auto rounded-[1.6rem] object-cover" />
+                <h2 class="font-display text-3xl text-ink">Hola de nuevo</h2>
+                <p class="text-slate-500 text-sm leading-relaxed">
+                    Entra con calma. Uwu te espera donde lo dejaste.
                 </p>
             </div>
 
             <div class="space-y-4">
                 <button @click="handleGoogleLogin"
-                    class="w-full flex items-center justify-center space-x-3 bg-white border-2 border-slate-200 text-slate-700 py-3.5 px-4 rounded-xl font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95">
+                    class="w-full flex items-center justify-center space-x-3 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-100 py-3.5 px-4 rounded-full font-medium shadow-[0_8px_30px_rgba(47,53,48,0.06)] dark:shadow-none active:scale-[0.98] transition-transform">
                     <svg class="h-5 w-5" viewBox="0 0 24 24">
                         <path
                             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"

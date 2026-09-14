@@ -7,16 +7,16 @@ import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, update
 import { useAuthStore } from '../stores/auth'
 import { uploadPostImage, deleteFileFromS3 } from '../aws'
 import { processUserAction } from '../gamification'
-import { useConfirm } from 'primevue/useconfirm'
-import ConfirmDialog from 'primevue/confirmdialog'
 import { DEFAULT_PET_NAME, isPetAuthorName } from '../pet'
+import QuietConfirm from '../components/QuietConfirm.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const confirm = useConfirm()
 const newPostContent = ref('')
 const posts = ref([])
 const isPublishing = ref(false)
+const showDeleteConfirm = ref(false)
+const postToDelete = ref(null)
 
 // Límite de comentarios: usuarios normales pueden comentar máximo 5 posts/día
 const MAX_USER_COMMENTS_PER_DAY = 5
@@ -187,44 +187,46 @@ const isLikedByUser = (post) => {
 }
 
 const deletePost = (post) => {
-    confirm.require({
-        message: '¿Quieres eliminar esta publicación? Esta acción no se puede deshacer.',
-        header: 'Eliminar publicación',
-        icon: 'pi pi-trash',
-        rejectLabel: 'Cancelar',
-        acceptLabel: 'Eliminar',
-        acceptClass: 'p-button-danger',
-        accept: async () => {
+    postToDelete.value = post
+    showDeleteConfirm.value = true
+}
+
+const confirmDeletePost = async () => {
+    const post = postToDelete.value
+    postToDelete.value = null
+    if (!post) return
+    try {
+        if (post.imageUrl) {
             try {
-                // Eliminar imagen de S3 si el post tiene una
-                if (post.imageUrl) {
-                    try {
-                        await deleteFileFromS3(post.imageUrl)
-                    } catch (s3Err) {
-                        console.warn('No se pudo eliminar la imagen de S3:', s3Err)
-                    }
-                }
-                await deleteDoc(doc(db, 'community_posts', post.id))
-            } catch (e) {
-                console.error('Error al eliminar publicación:', e)
+                await deleteFileFromS3(post.imageUrl)
+            } catch (s3Err) {
+                console.warn('No se pudo eliminar la imagen de S3:', s3Err)
             }
         }
-    })
+        await deleteDoc(doc(db, 'community_posts', post.id))
+    } catch (e) {
+        console.error('Error al eliminar publicación:', e)
+    }
 }
 
 </script>
 
 <template>
     <div dir="ltr"
-        class="h-full flex flex-col bg-slate-50 dark:bg-slate-950 relative flex-1 text-slate-800 dark:text-slate-100 overflow-y-auto">
-        <ConfirmDialog />
-        <!-- Header -->
+        class="h-full flex flex-col bg-sage-50 dark:bg-slate-950 relative flex-1 text-slate-800 dark:text-slate-100 overflow-y-auto">
+        <QuietConfirm
+            v-model="showDeleteConfirm"
+            title="Eliminar publicación"
+            message="¿Quieres eliminar esta publicación? Esta acción no se puede deshacer."
+            confirm-label="Eliminar"
+            @confirm="confirmDeletePost"
+        />
         <header
-            class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-4 px-6 sticky top-0 z-10">
-            <h1 class="font-bold text-xl text-center text-slate-900 dark:text-slate-100">El Refugio</h1>
-            <p
-                class="text-[0.65rem] text-slate-400 dark:text-slate-500 text-center uppercase tracking-wide font-bold mt-0.5">
-                Comunidad Segura</p>
+            class="px-6 pt-5 pb-3 sticky top-0 z-10 bg-sage-50/90 dark:bg-slate-950/90 backdrop-blur-md">
+            <h1 class="font-display text-2xl text-center text-ink">El refugio</h1>
+            <p class="text-xs text-slate-400 text-center mt-0.5">
+                Un lugar para escribir sin prisa
+            </p>
         </header>
 
         <div class="p-4 space-y-6 pb-24">

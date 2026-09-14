@@ -77,25 +77,24 @@ const colorOptions = PET_COLORS.map(c => ({ id: c.id, hex: c.hex }))
 </script>
 
 <template>
-    <div dir="ltr" class="h-full flex flex-col p-6 flex-1 bg-white relative text-slate-800">
+    <div dir="ltr" class="h-full flex flex-col p-6 flex-1 bg-sage-50 dark:bg-slate-950 relative text-slate-800 dark:text-slate-100">
         <div class="w-full flex space-x-2 mb-8 mt-4">
-            <div v-for="i in 4" :key="i" class="h-1.5 flex-1 rounded-full transition-colors duration-500"
-                :class="i <= step ? 'bg-green-500' : 'bg-slate-100'"></div>
+            <div v-for="i in 4" :key="i" class="h-1 flex-1 rounded-full transition-colors duration-500"
+                :class="i <= step ? 'bg-green-600' : 'bg-slate-200/80'"></div>
         </div>
 
         <!-- Step 1: Consent -->
         <div v-if="step === 1" class="flex-1 flex flex-col pt-4 animate-fade-in-up">
-            <h2 class="text-2xl font-bold mb-4">Antes de empezar</h2>
+            <h2 class="font-display text-2xl mb-4">Antes de empezar</h2>
             <p class="text-slate-600 mb-6 leading-relaxed">
-                PsicoRapport es un espacio seguro para tu salud mental. Nuestro compañero virtual
-                <strong>{{ DEFAULT_PET_NAME }}</strong> te guiará en este proceso, pero no reemplaza a la terapia profesional.
+                Este es un espacio para tu salud mental. {{ DEFAULT_PET_NAME }} te acompaña,
+                pero no reemplaza a un profesional.
             </p>
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-auto">
-                <p class="text-sm text-blue-800 font-medium">🛡️ Tu privacidad es nuestra prioridad. Todos tus datos
-                    están encriptados y son confidenciales.</p>
+            <div class="card-soft p-4 mb-auto">
+                <p class="text-sm text-slate-600 leading-relaxed">Tu privacidad importa. Lo que escribes queda entre tú y la app.</p>
             </div>
             <button @click="nextStep"
-                class="w-full mt-6 bg-green-600 text-white py-4 rounded-xl font-bold hover:bg-green-700 active:scale-95 transition-all text-lg flex items-center justify-center space-x-2">
+                class="btn-quiet mt-6 flex items-center justify-center space-x-2">
                 <span>Acepto y entiendo</span>
                 <ChevronRight class="w-5 h-5" />
             </button>
@@ -103,40 +102,40 @@ const colorOptions = PET_COLORS.map(c => ({ id: c.id, hex: c.hex }))
 
         <!-- Step 2: Info -->
         <div v-if="step === 2" class="flex-1 flex flex-col pt-4 animate-fade-in-up">
-            <h2 class="text-2xl font-bold mb-2">Cuéntanos un poco de ti</h2>
-            <p class="text-slate-500 text-sm mb-8">Esto ayudará a PsicoRapport a conocerte mejor.</p>
+            <h2 class="font-display text-2xl mb-2">Cuéntanos un poco de ti</h2>
+            <p class="text-slate-500 text-sm mb-8">Esto ayuda a {{ DEFAULT_PET_NAME }} a conocerte mejor.</p>
 
             <div class="space-y-6 mb-auto">
                 <label class="block">
                     <span class="text-slate-700 font-semibold mb-2 block">¿Cuál es tu edad?</span>
                     <input v-model="preferences.age" type="number" placeholder="Ej. 25"
-                        class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400" />
+                        class="w-full p-4 bg-white dark:bg-slate-900 dark:text-slate-100 border-0 rounded-2xl focus:ring-2 focus:ring-green-600/25 outline-none transition-all placeholder:text-slate-400" />
                 </label>
 
                 <label class="block">
                     <span class="text-slate-700 font-semibold mb-2 block">¿Cuál es tu principal motivo de
                         consulta?</span>
                     <textarea v-model="preferences.reason" rows="3" placeholder="Siento ansiedad por las noches..."
-                        class="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400 resize-none"></textarea>
+                        class="w-full p-4 bg-white dark:bg-slate-900 dark:text-slate-100 border-0 rounded-2xl focus:ring-2 focus:ring-green-600/25 outline-none transition-all placeholder:text-slate-400 resize-none"></textarea>
                 </label>
             </div>
 
             <button :disabled="!preferences.age || !preferences.reason" @click="nextStep"
-                class="w-full mt-6 bg-green-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold hover:bg-green-700 active:scale-95 transition-all text-lg">
+                class="btn-quiet mt-6">
                 Continuar
             </button>
         </div>
 
         <!-- Step 3: Preferences -->
         <div v-if="step === 3" class="flex-1 flex flex-col pt-4 animate-fade-in-up">
-            <h2 class="text-2xl font-bold mb-2">¿Qué buscas en tu terapeuta?</h2>
-            <p class="text-slate-500 text-sm mb-6">Selecciona el estilo con el que te sentirías más cómodo.</p>
+            <h2 class="font-display text-2xl mb-2">¿Qué buscas en tu terapeuta?</h2>
+            <p class="text-slate-500 text-sm mb-6">Elige el estilo con el que te sentirías más cómodo.</p>
 
             <div class="space-y-4 mb-auto">
                 <button v-for="style in therapyStyles" :key="style.id" @click="preferences.therapyStyle = style.id"
                     class="w-full flex items-center p-5 rounded-xl border-2 transition-all"
-                    :class="preferences.therapyStyle === style.id ? 'border-green-500 bg-green-50' : 'border-slate-100 bg-white hover:border-green-200'">
-                    <div :class="preferences.therapyStyle === style.id ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-500'"
+                    :class="preferences.therapyStyle === style.id ? 'border-green-600/30 bg-green-50 dark:border-slate-600 dark:bg-slate-800' : 'border-transparent bg-white dark:bg-slate-900'">
+                    <div :class="preferences.therapyStyle === style.id ? 'bg-green-700 dark:bg-slate-100 dark:text-slate-900 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'"
                         class="p-3 rounded-full mr-4 transition-colors">
                         <component :is="style.icon" class="w-5 h-5" />
                     </div>
@@ -145,7 +144,7 @@ const colorOptions = PET_COLORS.map(c => ({ id: c.id, hex: c.hex }))
             </div>
 
             <button :disabled="!preferences.therapyStyle" @click="nextStep"
-                class="w-full mt-6 bg-green-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold hover:bg-green-700 active:scale-95 transition-all text-lg">
+                class="btn-quiet mt-6">
                 Continuar
             </button>
         </div>
@@ -154,7 +153,7 @@ const colorOptions = PET_COLORS.map(c => ({ id: c.id, hex: c.hex }))
         <div v-if="step === 4"
             class="flex-1 flex flex-col items-center text-center pt-4 animate-fade-in-up overflow-y-auto">
             <PetAvatar :name="petName" :color="petColor" mood-key="feliz" :mood-level="5" size="lg" show-name />
-            <h2 class="text-2xl font-extrabold mb-2 mt-4">Conoce a {{ petName || DEFAULT_PET_NAME }}</h2>
+            <h2 class="font-display text-2xl mb-2 mt-4">Conoce a {{ petName || DEFAULT_PET_NAME }}</h2>
             <p class="text-slate-600 text-sm mb-4 max-w-[300px] leading-relaxed">
                 Inspirado en Winnicott: tu mascota te sostiene al inicio (dependencia), te ayuda a ganar autonomía y luego te acerca a un terapeuta.
             </p>
@@ -162,7 +161,7 @@ const colorOptions = PET_COLORS.map(c => ({ id: c.id, hex: c.hex }))
             <label class="w-full text-left mb-3">
                 <span class="text-sm font-semibold text-slate-700 mb-1.5 block">Ponle un nombre propio</span>
                 <input v-model="petName" maxlength="24"
-                    class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500"
+                    class="w-full p-3 bg-white dark:bg-slate-900 dark:text-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-green-600/25"
                     placeholder="Ej. Uwu, Andesito, Nube" />
             </label>
 
@@ -182,7 +181,7 @@ const colorOptions = PET_COLORS.map(c => ({ id: c.id, hex: c.hex }))
             </div>
 
             <button @click="nextStep"
-                class="w-full mt-auto bg-green-600 text-white py-4 rounded-xl font-bold hover:bg-green-700 active:scale-95 transition-all text-lg flex items-center justify-center gap-2">
+                class="btn-quiet mt-auto flex items-center justify-center gap-2">
                 <SmilePlus class="w-5 h-5" />
                 Empezar con {{ petName || DEFAULT_PET_NAME }}
             </button>

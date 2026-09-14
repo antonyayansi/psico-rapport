@@ -8,15 +8,14 @@ import { useAuthStore } from '../stores/auth'
 import { marked } from 'marked'
 import { processUserAction } from '../gamification'
 import { uploadPostImage } from '../aws'
-import { useConfirm } from 'primevue/useconfirm'
-import ConfirmDialog from 'primevue/confirmdialog'
 import PetAvatar from '../components/PetAvatar.vue'
+import QuietConfirm from '../components/QuietConfirm.vue'
 import { buildStageSystemPrompt, STAGE_META } from '../transition'
 import { DEFAULT_PET_NAME, resolveEmotion } from '../pet'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const confirm = useConfirm()
+const showDeleteConfirm = ref(false)
 const inputMsg = ref('')
 const messages = ref([])
 const chatContainer = ref(null)
@@ -223,22 +222,16 @@ const scrollToBottom = () => {
     })
 }
 
-const deleteChat = async () => {
-    confirm.require({
-        message: `¿Estás seguro de que quieres borrar todo el historial de chat con ${petDisplayName.value}?`,
-        header: 'Borrar conversación',
-        icon: 'pi pi-trash',
-        rejectLabel: 'Cancelar',
-        acceptLabel: 'Sí, borrar',
-        acceptClass: 'p-button-danger',
-        accept: async () => {
-            const deletions = messages.value
-                .filter(m => m.sender !== 'system')
-                .map(m => deleteDoc(doc(db, 'conversaciones_uwu', m.id)))
-            await Promise.all(deletions)
-            messages.value = messages.value.filter(m => m.sender === 'system')
-        }
-    })
+const deleteChat = () => {
+    showDeleteConfirm.value = true
+}
+
+const confirmDeleteChat = async () => {
+    const deletions = messages.value
+        .filter(m => m.sender !== 'system')
+        .map(m => deleteDoc(doc(db, 'conversaciones_uwu', m.id)))
+    await Promise.all(deletions)
+    messages.value = messages.value.filter(m => m.sender === 'system')
 }
 
 onMounted(() => {
@@ -275,8 +268,14 @@ onMounted(() => {
 </script>
 
 <template>
-    <div dir="ltr" class="h-full flex flex-col bg-slate-50 dark:bg-slate-950 relative flex-1 text-slate-800 dark:text-slate-100">
-        <ConfirmDialog />
+    <div dir="ltr" class="h-full flex flex-col bg-sage-50 dark:bg-slate-950 relative flex-1 text-slate-800 dark:text-slate-100">
+        <QuietConfirm
+            v-model="showDeleteConfirm"
+            title="Borrar conversación"
+            :message="`¿Quieres borrar todo el historial con ${petDisplayName}?`"
+            confirm-label="Sí, borrar"
+            @confirm="confirmDeleteChat"
+        />
 
         <!-- ── Crisis Overlay ────────────────────────────────────── -->
         <Transition name="fade">
@@ -303,16 +302,16 @@ onMounted(() => {
 
                     <!-- Terapeuta asignado -->
                     <button v-if="chosenTherapist" @click="router.push(`/therapists/${chosenTherapist.id}`)"
-                        class="w-full flex items-center justify-center space-x-3 bg-green-600 text-white py-4 rounded-2xl font-bold active:scale-95 transition-all">
+                        class="w-full flex items-center justify-center space-x-3 bg-green-600 dark:bg-slate-700 text-white py-4 rounded-2xl font-bold active:scale-95 transition-all">
                         <UserCheck class="w-5 h-5" />
                         <div class="text-left">
                             <p class="text-sm font-bold">Contactar a mi terapeuta</p>
-                            <p class="text-xs text-green-100">{{ chosenTherapist.displayName }}</p>
+                            <p class="text-xs text-green-100 dark:text-slate-300">{{ chosenTherapist.displayName }}</p>
                         </div>
                     </button>
 
                     <button v-else @click="router.push('/therapists')"
-                        class="w-full flex items-center justify-center space-x-3 bg-green-600 text-white py-4 rounded-2xl font-bold active:scale-95 transition-all">
+                        class="w-full flex items-center justify-center space-x-3 bg-green-600 dark:bg-slate-700 text-white py-4 rounded-2xl font-bold active:scale-95 transition-all">
                         <UserCheck class="w-5 h-5" />
                         <span>Buscar un terapeuta ahora</span>
                     </button>
@@ -327,10 +326,10 @@ onMounted(() => {
         <!-- ─────────────────────────────────────────────────────── -->
         <!-- Header -->
         <header
-            class="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between p-4 px-6 z-10 sticky top-0">
+            class="bg-sage-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-between p-4 px-5 z-10 sticky top-0">
             <div class="flex items-center space-x-3">
-                <button @click="router.back()" class="p-2 -ml-2 rounded-full hover:bg-slate-100">
-                    <ArrowLeft class="w-6 h-6 text-slate-600" />
+                <button @click="router.back()" class="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <ArrowLeft class="w-6 h-6 text-slate-600 dark:text-slate-300" />
                 </button>
                 <div class="flex items-center space-x-3">
                     <button @click="router.push('/pet')" class="relative" title="Personalizar mascota">
@@ -347,8 +346,8 @@ onMounted(() => {
                             class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
                     </button>
                     <div>
-                        <h1 class="font-bold text-lg leading-tight">{{ petDisplayName }}</h1>
-                        <p class="text-xs text-green-500 font-medium">{{ stageLabel }} · En línea</p>
+                        <h1 class="font-display text-lg leading-tight">{{ petDisplayName }}</h1>
+                        <p class="text-xs text-green-700/80 dark:text-slate-400 font-medium">{{ stageLabel }}</p>
                     </div>
                 </div>
             </div>
@@ -398,7 +397,7 @@ onMounted(() => {
                         class="w-8 h-8 rounded-[28%] object-cover flex-shrink-0 mb-0.5"
                     />
                     <div
-                        class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-200 p-3.5 rounded-2xl rounded-bl-sm">
+                        class="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 p-3.5 rounded-[1.35rem] rounded-bl-md shadow-[0_6px_20px_rgba(47,53,48,0.04)]">
                         <div class="text-[0.95rem] leading-relaxed markdown-body"
                             v-html="marked.parse(msg.text)"></div>
                         <p class="text-[0.65rem] text-slate-400 text-right mt-1.5">{{ msg.time }}</p>
@@ -407,7 +406,7 @@ onMounted(() => {
 
                 <!-- User Message (supports image) -->
                 <div v-else-if="msg.sender === 'user'" class="max-w-[85%] animate-fade-in-up">
-                    <div class="bg-green-600 text-white rounded-2xl rounded-br-sm overflow-hidden">
+                    <div class="bg-green-700 dark:bg-slate-700 text-white rounded-[1.35rem] rounded-br-md overflow-hidden">
                         <!-- Image attachment -->
                         <img v-if="msg.imageUrl" :src="msg.imageUrl" alt="Imagen adjunta"
                             class="w-full max-h-52 object-cover" />
@@ -437,7 +436,7 @@ onMounted(() => {
 
         <!-- Info Notice -->
         <div v-if="messages.length > 3" class="absolute bottom-[4.5rem] w-full px-4 transform transition-all z-10">
-            <div class="bg-blue-50/90 backdrop-blur-sm border border-blue-100 text-blue-800 text-xs p-2 rounded-lg flex items-center justify-center space-x-2 mx-auto max-w-[90%] cursor-pointer"
+            <div class="bg-white/90 text-slate-600 text-xs p-2.5 rounded-full flex items-center justify-center space-x-2 mx-auto max-w-[90%] cursor-pointer shadow-[0_8px_24px_rgba(47,53,48,0.05)]"
                 @click="router.push('/matching')">
                 <Info class="w-4 h-4" />
                 <span>PsicoRapport encontró terapeutas para ti. Ver ahora.</span>
@@ -445,7 +444,7 @@ onMounted(() => {
         </div>
 
         <!-- Input Area -->
-        <div class="flex-none bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 p-3 px-4 z-10 w-full">
+        <div class="flex-none bg-sage-50/90 dark:bg-slate-900/90 backdrop-blur-md p-3 px-4 z-10 w-full">
 
             <!-- Pending image preview -->
             <div v-if="pendingImage" class="mb-2 relative inline-block">
@@ -464,23 +463,23 @@ onMounted(() => {
             </div>
 
             <div
-                class="flex items-center space-x-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-full pr-1 focus-within:ring-2 focus-within:ring-green-500/20 focus-within:border-green-500 transition-all">
+                class="flex items-center space-x-2 bg-white dark:bg-slate-900 rounded-full pr-1 shadow-[0_8px_24px_rgba(47,53,48,0.05)]">
 
                 <!-- Image picker button -->
                 <button @click="imageInput?.click()"
-                    class="p-2 ml-1 rounded-full text-slate-400 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors flex-none"
+                    class="p-2 ml-1 rounded-full text-slate-400 hover:text-green-700 transition-colors flex-none"
                     title="Adjuntar imagen">
                     <ImagePlus class="w-5 h-5" />
                 </button>
                 <input ref="imageInput" type="file" accept="image/*" class="hidden" @change="onImageSelected" />
 
                 <input v-model="inputMsg" @keyup.enter="sendMessage" type="text"
-                    placeholder="Escribe un mensaje..."
+                    placeholder="Escribe con calma..."
                     dir="ltr"
                     class="flex-1 bg-transparent border-none py-3 pr-2 outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400 text-sm" />
 
                 <button @click="sendMessage" :disabled="!inputMsg.trim() && !pendingImage"
-                    class="p-2 rounded-full bg-green-500 text-white disabled:bg-slate-200 disabled:text-slate-400 transition-colors flex-none">
+                    class="p-2 rounded-full bg-green-700 dark:bg-slate-100 dark:text-slate-900 text-white disabled:bg-slate-200 disabled:text-slate-400 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 transition-colors flex-none">
                     <Send class="w-5 h-5 -ml-0.5 mt-0.5" />
                 </button>
             </div>

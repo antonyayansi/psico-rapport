@@ -2,29 +2,100 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary-50: #f0fdf4;
-  --color-primary-100: #dcfce7;
-  --color-primary-200: #bbf7d0;
-  --color-primary-300: #86efac;
-  --color-primary-400: #4ade80;
-  --color-primary-500: #22c55e;
-  --color-primary-600: #16a34a;
-  --color-primary-700: #15803d;
-  --color-primary-800: #166534;
-  --color-primary-900: #14532d;
-  --color-primary-950: #052e16;
+  /* Sage calm — light-mode accents only */
+  --color-green-50: #f3f6f1;
+  --color-green-100: #e6eee6;
+  --color-green-200: #cfdccb;
+  --color-green-300: #b3c6ae;
+  --color-green-400: #8aa78a;
+  --color-green-500: #6d8b70;
+  --color-green-600: #5a7360;
+  --color-green-700: #4a5e4f;
+  --color-green-800: #3c4c41;
+  --color-green-900: #2f3c34;
+  --color-green-950: #1f2824;
+
+  --color-emerald-50: #f3f6f1;
+  --color-emerald-100: #e6eee6;
+  --color-emerald-200: #d0dfcf;
+  --color-emerald-300: #b0c9b2;
+  --color-emerald-400: #8aab8e;
+  --color-emerald-500: #6d8f70;
+  --color-emerald-600: #5a7560;
+  --color-emerald-700: #4a5e4e;
+  --color-emerald-800: #3a4a3e;
+  --color-emerald-900: #2f3b32;
+
+  /* Warm paper in light; zinc (neutral gray) for everything darker */
+  --color-slate-50: #f6f4f0;
+  --color-slate-100: #eceae3;
+  --color-slate-200: #ddd6cc;
+  --color-slate-300: #d4d4d8;
+  --color-slate-400: #a1a1aa;
+  --color-slate-500: #71717a;
+  --color-slate-600: #52525b;
+  --color-slate-700: #3f3f46;
+  --color-slate-800: #27272a;
+  --color-slate-900: #18181b;
+  --color-slate-950: #09090b;
+
+  --color-sage-50: #f4f6f2;
+  --color-sage-100: #e7eee6;
+  --color-ink: #2f3530;
+  --color-muted: #6b736c;
+
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+}
+
+.dark {
+  --color-ink: #f4f4f5;
+  --color-muted: #a1a1aa;
+  --color-sage-50: #09090b;
+  --color-sage-100: #18181b;
+  --color-green-50: #27272a;
+  --color-slate-50: #18181b;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Nunito', system-ui, Avenir, Helvetica, Arial, sans-serif;
-  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  font-family: var(--font-sans);
+  @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100;
+  letter-spacing: -0.01em;
 }
 
-/* Custom base resets for app feel */
+h1, h2, .font-display {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-weight: 560;
+}
+
 #app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+.btn-quiet {
+  @apply w-full py-3.5 rounded-full font-semibold text-white bg-green-700 dark:bg-slate-100 dark:text-slate-900 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-transform;
+}
+
+.card-soft {
+  @apply bg-white/90 dark:bg-slate-900 rounded-[1.75rem] border border-white/70 dark:border-slate-800;
+  box-shadow: 0 10px 36px rgba(47, 53, 48, 0.045);
+}
+
+.dark .card-soft {
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
