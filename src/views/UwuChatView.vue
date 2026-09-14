@@ -12,6 +12,7 @@ import PetAvatar from '../components/PetAvatar.vue'
 import QuietConfirm from '../components/QuietConfirm.vue'
 import { buildStageSystemPrompt, STAGE_META } from '../transition'
 import { DEFAULT_PET_NAME, resolveEmotion } from '../pet'
+import { runUwuAgent } from '../agent/uwuAgent'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -20,6 +21,7 @@ const inputMsg = ref('')
 const messages = ref([])
 const chatContainer = ref(null)
 const isTyping = ref(false)
+const agentStatus = ref('')
 
 // Image upload state
 const imageInput = ref(null)
@@ -65,13 +67,12 @@ const callPanicLine = () => {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-const systemPrompt = computed(() => ({
-    role: 'system',
-    content: buildStageSystemPrompt(
+const systemPromptText = computed(() =>
+    buildStageSystemPrompt(
       authStore.transitionStage,
       authStore.pet?.name || DEFAULT_PET_NAME
     )
-}))
+)
 
 const petDisplayName = computed(() => authStore.pet?.name || DEFAULT_PET_NAME)
 const petFaceSrc = computed(() => resolveEmotion({
@@ -80,9 +81,8 @@ const petFaceSrc = computed(() => resolveEmotion({
 }).src)
 const stageLabel = computed(() => (STAGE_META[authStore.transitionStage] || STAGE_META.dependency).short)
 
-// Convert Firestore history to OpenAI format (text-only for context window)
 const getChatHistoryForAPI = () => {
-    const recent = messages.value.filter(m => m.sender !== 'system').slice(-6)
+    const recent = messages.value.filter(m => m.sender !== 'system').slice(-12)
     return recent.map(m => ({
         role: m.sender === 'uwu' ? 'assistant' : 'user',
         content: m.imageUrl
@@ -94,54 +94,26 @@ const getChatHistoryForAPI = () => {
     }))
 }
 
-// Fetch response — supports optional imageUrl for vision
-const fetchOpenAIResponse = async (userText, imageUrl = null) => {
-    const history = getChatHistoryForAPI()
-
-    // Build current user message content
-    let userContent
-    if (imageUrl) {
-        userContent = [
-            { type: 'text', text: userText || 'Analiza esta imagen y responde con empatía.' },
-            { type: 'image_url', image_url: { url: imageUrl, detail: 'low' } }
-        ]
-    } else {
-        userContent = userText
+const runAgentAction = (action) => {
+    if (action?.tel) {
+        window.open(`tel:${action.tel}`, '_self')
+        return
     }
-
-    history.push({ role: 'user', content: userContent })
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openAIKey}`
-        },
-        body: JSON.stringify({
-            model: 'gpt-4o',          // Vision-capable model
-            messages: [systemPrompt.value, ...history],
-            max_tokens: 300,
-            temperature: 0.7
-        })
-    })
-
-    if (!response.ok) throw new Error('API Error')
-
-    const data = await response.json()
-    return data.choices[0].message.content
+    if (action?.route) router.push(action.route)
 }
 
 const addSystemMessage = (text) => {
     messages.value.push({ id: Date.now(), text, sender: 'system' })
 }
 
-const sendMessageToDB = async (text, sender, imageUrl = null) => {
+const sendMessageToDB = async (text, sender, imageUrl = null, actions = null) => {
     const userId = authStore.user.uid
     await addDoc(collection(db, 'conversaciones_uwu'), {
         id_usuario: userId,
         mensaje: text,
         sender: sender,
         imageUrl: imageUrl || null,
+        actions: actions?.length ? actions : null,
         timestamp: serverTimestamp()
     })
 }
@@ -200,17 +172,41 @@ const sendMessage = async () => {
     }
 
     isTyping.value = true
+    agentStatus.value = 'Pensando…'
     scrollToBottom()
 
     try {
-        const uwuReply = await fetchOpenAIResponse(text, uploadedImageUrl)
-        await sendMessageToDB(uwuReply, 'uwu')
+        const result = await runUwuAgent({
+            apiKey: openAIKey,
+            uid: authStore.user.uid,
+            systemPrompt: systemPromptText.value,
+            history: (() => {
+                const history = getChatHistoryForAPI()
+                const last = history[history.length - 1]
+                if (last?.role === 'user') {
+                    const lastText = typeof last.content === 'string'
+                        ? last.content
+                        : last.content?.[0]?.text
+                    if (!text || lastText === text || lastText === '(imagen)') history.pop()
+                }
+                return history
+            })(),
+            userText: text,
+            imageUrl: uploadedImageUrl,
+            onStatus: (status) => {
+                agentStatus.value = status
+            }
+        })
+        const uwuReply = result.text || 'Estoy aquí. ¿Quieres que mire tu ánimo, tu mascota o los psicólogos disponibles?'
+        await sendMessageToDB(uwuReply, 'uwu', null, result.actions)
         await processUserAction(authStore.user.uid, 'chat')
+        if (result.wroteMood) await authStore.refreshPet()
     } catch (error) {
         console.error("OpenAI Error:", error)
         await sendMessageToDB("Lo siento, estoy teniendo problemas de conexión. ¿Puedes intentar de nuevo?", 'uwu')
     } finally {
         isTyping.value = false
+        agentStatus.value = ''
     }
 }
 
@@ -251,6 +247,7 @@ onMounted(() => {
                     text: data.mensaje,
                     sender: data.sender,
                     imageUrl: data.imageUrl || null,
+                    actions: Array.isArray(data.actions) ? data.actions : [],
                     time: data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'
                 })
             }
@@ -400,6 +397,17 @@ onMounted(() => {
                         class="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 p-3.5 rounded-[1.35rem] rounded-bl-md shadow-[0_6px_20px_rgba(47,53,48,0.04)]">
                         <div class="text-[0.95rem] leading-relaxed markdown-body"
                             v-html="marked.parse(msg.text)"></div>
+                        <div v-if="msg.actions?.length" class="flex flex-wrap gap-1.5 mt-2.5">
+                            <button
+                                v-for="(action, idx) in msg.actions"
+                                :key="`${msg.id}-${action.action}-${idx}`"
+                                type="button"
+                                class="px-3 py-1.5 rounded-full text-xs font-medium bg-sage-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 active:scale-[0.97]"
+                                @click="runAgentAction(action)"
+                            >
+                                {{ action.label }}
+                            </button>
+                        </div>
                         <p class="text-[0.65rem] text-slate-400 text-right mt-1.5">{{ msg.time }}</p>
                     </div>
                 </div>
@@ -426,10 +434,13 @@ onMounted(() => {
             <!-- Typing indicator -->
             <div v-if="isTyping" class="flex items-end space-x-2 w-full animate-fade-in-up">
                 <img :src="petFaceSrc" :alt="petDisplayName" class="w-8 h-8 rounded-[28%] object-cover flex-shrink-0" />
-                <div class="bg-white dark:bg-slate-900 border dark:border-slate-800 text-slate-500 p-4 rounded-2xl rounded-bl-sm flex space-x-1.5">
-                    <span class="w-2 h-2 rounded-full bg-slate-300 animate-bounce"></span>
-                    <span class="w-2 h-2 rounded-full bg-slate-300 animate-bounce" style="animation-delay: 150ms"></span>
-                    <span class="w-2 h-2 rounded-full bg-slate-300 animate-bounce" style="animation-delay: 300ms"></span>
+                <div class="bg-white dark:bg-slate-900 border dark:border-slate-800 text-slate-500 px-4 py-3 rounded-2xl rounded-bl-sm">
+                    <div class="flex space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-slate-300 animate-bounce"></span>
+                        <span class="w-2 h-2 rounded-full bg-slate-300 animate-bounce" style="animation-delay: 150ms"></span>
+                        <span class="w-2 h-2 rounded-full bg-slate-300 animate-bounce" style="animation-delay: 300ms"></span>
+                    </div>
+                    <p v-if="agentStatus" class="text-[0.65rem] text-slate-400 mt-2 leading-none">{{ agentStatus }}</p>
                 </div>
             </div>
         </div>

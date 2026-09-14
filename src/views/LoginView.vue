@@ -10,75 +10,51 @@ import { ArrowLeft } from 'lucide-vue-next'
 
 const router = useRouter()
 const errorMsg = ref('')
-const debugLogs = ref([])
-
-const addLog = (msg) => {
-    console.log(msg)
-    debugLogs.value.push(msg)
-}
+const isSigningIn = ref(false)
 
 const handleGoogleLogin = async () => {
     errorMsg.value = ''
-    debugLogs.value = []
+    isSigningIn.value = true
     try {
-        let result;
-        addLog("Iniciando login...")
+        let result
 
         if (Capacitor.isNativePlatform()) {
-            addLog("Plataforma Nativa (Android/iOS)")
             GoogleAuth.initialize({
-                clientId: '339102139400-tf1rv64tn6v1ehjia7fmq2hvetaidigo.apps.googleusercontent.com', 
+                clientId: '339102139400-tf1rv64tn6v1ehjia7fmq2hvetaidigo.apps.googleusercontent.com',
                 scopes: ['profile', 'email'],
                 grantOfflineAccess: true,
-            });
-            addLog("Llamando a GoogleAuth.signIn()...")
-            
+            })
+
             const googleUser = await GoogleAuth.signIn()
-            addLog("Éxito en Plugin Native. Validando token...")
-            
-            if (!googleUser || !googleUser.authentication) {
-                throw new Error("No hay data de auth")
+            if (!googleUser?.authentication?.idToken) {
+                throw new Error('auth-incomplete')
             }
-            
-            const idToken = googleUser.authentication.idToken
-            addLog("Token obtenido. Enviando a Firebase...")
-            
-            const credential = GoogleAuthProvider.credential(idToken)
+
+            const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken)
             result = await signInWithCredential(auth, credential)
-            addLog("Autenticado en Firebase exitosamente.")
         } else {
-            addLog("Plataforma Web. Usando Popup...")
             const { signInWithPopup } = await import('firebase/auth')
             result = await signInWithPopup(auth, googleProvider)
         }
 
         if (result && result.user) {
-            // Verificar consentimiento y onboarding
             const userDoc = await getDoc(doc(db, 'users', result.user.uid))
             if (!userDoc.exists() || userDoc.data().consentAccepted === false) {
-                addLog("Redirigiendo a /consent")
                 router.push('/consent')
                 return
             }
             const prefDoc = await getDoc(doc(db, 'preferencias', result.user.uid))
-            if (prefDoc.exists()) {
-                addLog("Redirigiendo a /uwu")
-                router.push('/uwu')
-            } else {
-                addLog("Redirigiendo a /onboarding")
-                router.push('/onboarding')
-            }
+            router.push(prefDoc.exists() ? '/uwu' : '/onboarding')
         }
     } catch (error) {
-        let errStr = "Parse Error"
-        if (error && typeof error === 'object') {
-            errStr = `Message: ${error.message} - Code: ${error.code} - Todo: ${JSON.stringify(error)}`
-        } else {
-            errStr = String(error)
-        }
-        
-        addLog("ERROR ATRAPADO: " + errStr)
-        errorMsg.value = `Error: ${errStr}`
+        const cancelled = error?.code === 'auth/popup-closed-by-user'
+            || error?.code === 'auth/cancelled-popup-request'
+            || /cancel|closed/i.test(String(error?.message || ''))
+        if (cancelled) return
+        console.error('Login error:', error)
+        errorMsg.value = 'No se pudo entrar. Inténtalo de nuevo.'
+    } finally {
+        isSigningIn.value = false
     }
 }
 </script>
@@ -100,8 +76,8 @@ const handleGoogleLogin = async () => {
             </div>
 
             <div class="space-y-4">
-                <button @click="handleGoogleLogin"
-                    class="w-full flex items-center justify-center space-x-3 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-100 py-3.5 px-4 rounded-full font-medium shadow-[0_8px_30px_rgba(47,53,48,0.06)] dark:shadow-none active:scale-[0.98] transition-transform">
+                <button @click="handleGoogleLogin" :disabled="isSigningIn"
+                    class="w-full flex items-center justify-center space-x-3 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-100 py-3.5 px-4 rounded-full font-medium shadow-[0_8px_30px_rgba(47,53,48,0.06)] dark:shadow-none active:scale-[0.98] transition-transform disabled:opacity-60">
                     <svg class="h-5 w-5" viewBox="0 0 24 24">
                         <path
                             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -120,12 +96,9 @@ const handleGoogleLogin = async () => {
                 </button>
             </div>
 
-            <p v-if="errorMsg" class="text-red-500 text-sm text-center bg-red-50 p-3 rounded-lg border border-red-100 break-words">
-                {{ errorMsg }}</p>
-
-            <div v-if="debugLogs.length > 0" class="text-left bg-slate-900 text-green-400 p-4 rounded-lg font-mono text-[10px] sm:text-xs overflow-y-auto max-h-48 break-words flex flex-col space-y-1 mt-4">
-                <div v-for="(log, idx) in debugLogs" :key="idx">> {{ log }}</div>
-            </div>
+            <p v-if="errorMsg" class="text-sm text-center text-slate-500">
+                {{ errorMsg }}
+            </p>
 
         </div>
     </div>
