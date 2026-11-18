@@ -1,7 +1,7 @@
 import { db } from './firebase'
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 
-export const DEFAULT_PET_NAME = 'Uwu'
+export const DEFAULT_PET_NAME = 'Qori'
 
 export const PET_COLORS = [
   { id: 'amber', label: 'Ámbar', hex: '#f59e0b', bg: 'bg-amber-100', face: 'bg-amber-200' },
@@ -104,7 +104,7 @@ export function getMoodFace(levelOrKey) {
 }
 
 export function isPetAuthorName(name = '') {
-  return /psico\s?rapport|uwu/i.test(String(name))
+  return /psico\s?rapport|qori|uwu/i.test(String(name))
 }
 
 export function defaultPet(uid, name = DEFAULT_PET_NAME) {

@@ -162,7 +162,7 @@ const colorOptions = PET_COLORS.map(c => ({ id: c.id, hex: c.hex }))
                 <span class="text-sm font-semibold text-slate-700 mb-1.5 block">Ponle un nombre propio</span>
                 <input v-model="petName" maxlength="24"
                     class="w-full p-3 bg-white dark:bg-slate-900 dark:text-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-green-600/25"
-                    placeholder="Ej. Uwu, Andesito, Nube" />
+                    placeholder="Ej. Qori, Andesito, Nube" />
             </label>
 
             <div class="w-full text-left mb-6">

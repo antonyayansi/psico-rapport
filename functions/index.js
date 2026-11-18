@@ -106,14 +106,14 @@ exports.notifyOnComment = onDocumentUpdated(
         // El comentario nuevo es el último
         const newComment = commentsAfter[commentsAfter.length - 1];
 
-        // No notificar si el autor se comentó a sí mismo, ni si es Uwu el bot
+        // No notificar si el autor se comentó a sí mismo, ni si es la mascota el bot
         if (!newComment) return null;
 
         // Detectar si el commenter es el mismo autor (comparar nombre como fallback)
         // Idealmente el comentario tendría authorId, pero actualmente solo tiene authorName
-        // Usamos el nombre de Uwu para no notificar el bot
+        // Usamos el nombre de la mascota para no notificar el bot
         if (newComment.isPet) return null;
-        if (/uwu|psico\s?rapport/i.test(newComment.authorName || '')) return null;
+        if (/qori|uwu|psico\s?rapport/i.test(newComment.authorName || '')) return null;
 
         // Leer el FCM token del autor del post
         const userDoc = await db.collection('users').doc(authorId).get();

@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Heart, MessageCircle, Plus, User, Users, PawPrint, Stethoscope } from 'lucide-vue-next'
+import { DEFAULT_PET_NAME } from '../pet'
 
 const router = useRouter()
 const route = useRoute()
@@ -15,7 +16,7 @@ const tabs = [
 ]
 
 const plusItems = [
-  { name: 'Cuidar a Uwu', to: '/pet', icon: PawPrint },
+  { name: `Cuidar a ${DEFAULT_PET_NAME}`, to: '/pet', icon: PawPrint },
   { name: 'Terapeutas', to: '/matching', icon: Stethoscope }
 ]
 

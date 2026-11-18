@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore'
 import { STAGE_META, STAGES, canReachIndependence } from '../transition'
 import {
+  DEFAULT_PET_NAME,
   PET_EMOTIONS,
   decayStats,
   updatePetMood
@@ -42,7 +43,7 @@ export const APP_ACTIONS = {
   open_diary: { route: '/tracking', label: 'Registrar ánimo' },
   open_therapists: { route: '/therapists', label: 'Ver psicólogos' },
   open_matching: { route: '/matching', label: 'Encontrar terapeuta' },
-  open_pet: { route: '/pet', label: 'Cuidar a Uwu' },
+  open_pet: { route: '/pet', label: `Cuidar a ${DEFAULT_PET_NAME}` },
   open_stats: { route: '/stats', label: 'Ver mi progreso' },
   call_crisis: { tel: '113', label: 'Llamar línea 113' }
 }
@@ -95,7 +96,7 @@ export const OPENAI_TOOLS = [
     function: {
       name: 'get_pet_state',
       description:
-        'Estado actual de la mascota ODT (nombre, emoción, hambre, felicidad, energía). Úsalo si preguntan por Uwu o por cómo está la mascota.',
+        `Estado actual de la mascota ODT (nombre, emoción, hambre, felicidad, energía). Úsalo si preguntan por ${DEFAULT_PET_NAME} o por cómo está la mascota.`,
       parameters: { type: 'object', properties: {}, additionalProperties: false }
     }
   },
@@ -327,7 +328,7 @@ async function getPetState(uid) {
   const pet = decayStats(raw)
   const emotion = PET_EMOTIONS[pet.moodKey] || PET_EMOTIONS.calma
   return {
-    nombre: pet.name || 'Uwu',
+    nombre: pet.name || DEFAULT_PET_NAME,
     emocion: emotion.id,
     emocion_etiqueta: emotion.label,
     hambre: Math.round(pet.hunger ?? 80),

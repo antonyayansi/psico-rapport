@@ -5,6 +5,7 @@ import { db } from '../firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
 import { ChevronDown, CheckCircle2, AlertTriangle, Heart, Lock } from 'lucide-vue-next'
+import { DEFAULT_PET_NAME } from '../pet'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -71,7 +72,7 @@ const handleAccept = async () => {
         </h2>
         <p class="text-slate-600 dark:text-slate-400 leading-relaxed">
           PsicoRapport es una plataforma digital de apoyo emocional y salud mental. Cuenta con
-          <strong class="text-ink font-medium">Uwu</strong>, una mascota personalizable que actúa como
+          <strong class="text-ink font-medium">{{ DEFAULT_PET_NAME }}</strong>, una mascota personalizable que actúa como
           <strong class="text-ink font-medium">Objeto Digital Transicional (ODT)</strong>,
           inspirado en la teoría de Donald Winnicott: te acompaña en la dependencia emocional inicial, fomenta tu
           independencia y facilita el puente hacia un terapeuta humano verificado.
@@ -88,7 +89,7 @@ const handleAccept = async () => {
             <AlertTriangle class="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
             <p class="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
               <strong class="text-ink font-medium">Importante:</strong> PsicoRapport no es un terapeuta, psicólogo ni profesional de salud mental.
-              Las conversaciones con Uwu <strong class="text-ink font-medium">no reemplazan</strong> la atención psicológica o psiquiátrica profesional.
+              Las conversaciones con {{ DEFAULT_PET_NAME }} <strong class="text-ink font-medium">no reemplazan</strong> la atención psicológica o psiquiátrica profesional.
             </p>
           </div>
         </div>
@@ -107,7 +108,7 @@ const handleAccept = async () => {
         <ul class="space-y-2 text-slate-600 dark:text-slate-400">
           <li class="flex items-start space-x-2">
             <span class="text-slate-400 mt-0.5">•</span>
-            <span>Tus conversaciones con Uwu se almacenan de forma encriptada y solo son accesibles por ti.</span>
+            <span>Tus conversaciones con {{ DEFAULT_PET_NAME }} se almacenan de forma encriptada y solo son accesibles por ti.</span>
           </li>
           <li class="flex items-start space-x-2">
             <span class="text-slate-400 mt-0.5">•</span>

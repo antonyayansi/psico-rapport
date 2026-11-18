@@ -8,6 +8,7 @@ import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 import { Capacitor } from '@capacitor/core'
 import { ArrowLeft } from 'lucide-vue-next'
 import InstallHint from '../components/InstallHint.vue'
+import { DEFAULT_PET_NAME } from '../pet'
 
 const router = useRouter()
 const errorMsg = ref('')
@@ -69,10 +70,10 @@ const handleGoogleLogin = async () => {
 
         <div class="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full space-y-8">
             <div class="text-center space-y-3">
-                <img src="/emociones/feliz.png" alt="Uwu" class="w-28 h-24 mx-auto rounded-[1.6rem] object-cover" />
+                <img src="/emociones/feliz.png" :alt="DEFAULT_PET_NAME" class="w-28 h-24 mx-auto rounded-[1.6rem] object-cover" />
                 <h2 class="font-display text-3xl text-ink">Hola de nuevo</h2>
                 <p class="text-slate-500 text-sm leading-relaxed">
-                    Entra con calma. Uwu te espera donde lo dejaste.
+                    Entra con calma. {{ DEFAULT_PET_NAME }} te espera donde lo dejaste.
                 </p>
             </div>
 
