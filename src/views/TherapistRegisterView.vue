@@ -15,17 +15,23 @@ const submitted = ref(false)
 const errorMsg = ref('')
 
 const form = ref({
-  displayName: authStore.user?.displayName || '',
-  email: authStore.user?.email || '',
-  title: '',
-  licenseNumber: '',
-  mainSpecialty: '',
-  subspecialty: '',
-  focusAreas: [''],
-  experience: [{ period: '', role: '', institution: '' }],
-  education: [{ degree: '', institution: '', year: '' }],
-  certifications: [''],
-  bio: '',
+  displayName: authStore.user?.displayName || (import.meta.env.VITE_MANUAL_SHOTS === '1' ? 'Dra. Sofía Ramírez' : ''),
+  email: authStore.user?.email || (import.meta.env.VITE_MANUAL_SHOTS === '1' ? 'sofia@ejemplo.com' : ''),
+  title: import.meta.env.VITE_MANUAL_SHOTS === '1' ? 'Psicóloga clínica' : '',
+  licenseNumber: import.meta.env.VITE_MANUAL_SHOTS === '1' ? 'CPP-12345' : '',
+  mainSpecialty: import.meta.env.VITE_MANUAL_SHOTS === '1' ? 'Ansiedad y regulación emocional' : '',
+  subspecialty: import.meta.env.VITE_MANUAL_SHOTS === '1' ? 'Adultos jóvenes' : '',
+  focusAreas: import.meta.env.VITE_MANUAL_SHOTS === '1' ? ['Ansiedad', 'Autocuidado'] : [''],
+  experience: import.meta.env.VITE_MANUAL_SHOTS === '1'
+    ? [{ period: '2019–2025', role: 'Psicóloga clínica', institution: 'Centro de Bienestar Lima' }]
+    : [{ period: '', role: '', institution: '' }],
+  education: import.meta.env.VITE_MANUAL_SHOTS === '1'
+    ? [{ degree: 'Lic. Psicología', institution: 'UNMSM', year: '2018' }]
+    : [{ degree: '', institution: '', year: '' }],
+  certifications: import.meta.env.VITE_MANUAL_SHOTS === '1' ? ['Terapia cognitivo-conductual'] : [''],
+  bio: import.meta.env.VITE_MANUAL_SHOTS === '1'
+    ? 'Acompaño procesos de ansiedad y autocuidado con un enfoque empático y práctico.'
+    : '',
   agreeTerms: false
 })
 

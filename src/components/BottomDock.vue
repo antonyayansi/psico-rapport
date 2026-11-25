@@ -1,11 +1,13 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Heart, MessageCircle, Plus, User, Users, PawPrint, Stethoscope } from 'lucide-vue-next'
+import { Heart, MessageCircle, Plus, User, Users, PawPrint, Stethoscope, CloudMoon } from 'lucide-vue-next'
 import { DEFAULT_PET_NAME } from '../pet'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
 const plusOpen = ref(false)
 
 const tabs = [
@@ -15,13 +17,17 @@ const tabs = [
   { name: 'Tú', to: '/stats', icon: User, match: ['Stats'] }
 ]
 
-const plusItems = [
-  { name: `Cuidar a ${DEFAULT_PET_NAME}`, to: '/pet', icon: PawPrint },
-  { name: 'Terapeutas', to: '/matching', icon: Stethoscope }
-]
+const plusItems = computed(() => {
+  const petName = authStore.pet?.name || DEFAULT_PET_NAME
+  return [
+    { name: 'Momentos', to: '/med-support', icon: CloudMoon },
+    { name: `Cuidar a ${petName}`, to: '/pet', icon: PawPrint },
+    { name: 'Terapeutas', to: '/matching', icon: Stethoscope }
+  ]
+})
 
 const plusActive = computed(() =>
-  ['Pet', 'Matching', 'Therapists', 'TherapistProfile', 'TherapistRegister', 'Admin'].includes(route.name)
+  ['Pet', 'Matching', 'Therapists', 'TherapistProfile', 'TherapistRegister', 'Admin', 'MedSupport'].includes(route.name)
 )
 
 const isTabActive = (tab) => tab.match.includes(route.name)
@@ -51,7 +57,7 @@ watch(() => route.fullPath, () => {
 
     <div class="relative z-20 flex items-center justify-center gap-3">
       <div
-        class="flex items-center gap-0.5 rounded-full bg-white dark:bg-zinc-900 px-1.5 py-1.5 shadow-[0_10px_32px_rgba(47,53,48,0.08)] dark:shadow-[0_10px_32px_rgba(0,0,0,0.4)]"
+        class="flex items-center gap-0.5 rounded-full bg-white dark:bg-zinc-900 px-1.5 py-1.5 border border-slate-200/80 dark:border-zinc-800"
       >
         <button
           v-for="tab in tabs"
@@ -78,7 +84,7 @@ watch(() => route.fullPath, () => {
         <Transition name="dock-sheet">
           <div
             v-if="plusOpen"
-            class="absolute bottom-[calc(100%+0.7rem)] right-0 w-52 rounded-[1.35rem] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl p-1.5 shadow-[0_12px_40px_rgba(47,53,48,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)]"
+            class="absolute bottom-[calc(100%+0.7rem)] right-0 w-52 rounded-[1.25rem] bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 p-1.5 shadow-[0_8px_24px_rgba(47,53,48,0.1)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
           >
             <button
               v-for="item in plusItems"
@@ -97,7 +103,7 @@ watch(() => route.fullPath, () => {
           type="button"
           aria-label="Más"
           :aria-expanded="plusOpen"
-          class="w-14 h-14 rounded-full flex items-center justify-center text-zinc-800 active:scale-[0.94] transition-transform duration-150 shadow-[0_8px_24px_rgba(168,197,90,0.28)]"
+          class="w-14 h-14 rounded-full flex items-center justify-center text-zinc-800 active:scale-[0.94] transition-transform duration-150"
           :class="plusOpen || plusActive ? 'bg-[#b6e85a]' : 'bg-[#c8f06c]'"
           @click="plusOpen = !plusOpen"
         >

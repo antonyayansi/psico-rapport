@@ -7,6 +7,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
 import { ensurePet, savePetCustomization, PET_COLORS, DEFAULT_PET_NAME } from '../pet'
 import { STAGES } from '../transition'
+import { getOnboardingContexts, MED_REASON_PRESETS } from '../medSupport'
 import PetAvatar from '../components/PetAvatar.vue'
 
 const router = useRouter()
@@ -15,12 +16,29 @@ const step = ref(1)
 const preferences = ref({
     age: '',
     reason: '',
+    reasonPreset: '',
+    rol: '',
+    anio_estudio: '',
     therapyStyle: ''
 })
 const petName = ref(DEFAULT_PET_NAME)
 const petColor = ref('amber')
+const contexts = getOnboardingContexts()
+const reasonPresets = MED_REASON_PRESETS
+
+const ageOk = () => {
+    const n = Number(preferences.value.age)
+    return Number.isFinite(n) && n >= 18
+}
+
+const applyReasonPreset = (preset) => {
+    preferences.value.reasonPreset = preset
+    if (preset !== 'Otro') preferences.value.reason = preset
+    else if (reasonPresets.includes(preferences.value.reason)) preferences.value.reason = ''
+}
 
 onMounted(async () => {
+    if (import.meta.env.VITE_MANUAL_SHOTS === '1') return
     const userId = authStore.user?.uid
     if (userId) {
         const prefDoc = await getDoc(doc(db, 'preferencias', userId))
@@ -42,6 +60,8 @@ const nextStep = async () => {
                 edad: Number(preferences.value.age),
                 motivo_consulta: preferences.value.reason,
                 estilo_terapeuta: preferences.value.therapyStyle,
+                rol: preferences.value.rol || 'otro',
+                anio_estudio: preferences.value.anio_estudio || null,
                 fecha_registro: new Date()
             }, { merge: true })
 
@@ -57,6 +77,8 @@ const nextStep = async () => {
                 moodShareConsent: false
             }, { merge: true })
 
+            authStore.contextoRol = preferences.value.rol || 'otro'
+            authStore.anioEstudio = preferences.value.anio_estudio || null
             await authStore.refreshPet()
             authStore.transitionStage = STAGES.dependency
 
@@ -101,27 +123,61 @@ const colorOptions = PET_COLORS.map(c => ({ id: c.id, hex: c.hex }))
         </div>
 
         <!-- Step 2: Info -->
-        <div v-if="step === 2" class="flex-1 flex flex-col pt-4 animate-fade-in-up">
+        <div v-if="step === 2" class="flex-1 flex flex-col pt-4 animate-fade-in-up overflow-y-auto">
             <h2 class="font-display text-2xl mb-2">Cuéntanos un poco de ti</h2>
-            <p class="text-slate-500 text-sm mb-8">Esto ayuda a {{ DEFAULT_PET_NAME }} a conocerte mejor.</p>
+            <p class="text-slate-500 text-sm mb-6">Para personalizar el acompañamiento. PsicoRapport es para personas mayores de 18 años.</p>
 
-            <div class="space-y-6 mb-auto">
+            <div class="space-y-5 mb-auto pb-4">
                 <label class="block">
                     <span class="text-slate-700 font-semibold mb-2 block">¿Cuál es tu edad?</span>
-                    <input v-model="preferences.age" type="number" placeholder="Ej. 25"
+                    <input v-model="preferences.age" type="number" min="18" placeholder="Ej. 22"
                         class="w-full p-4 bg-white dark:bg-slate-900 dark:text-slate-100 border-0 rounded-2xl focus:ring-2 focus:ring-green-600/25 outline-none transition-all placeholder:text-slate-400" />
+                    <p v-if="preferences.age && !ageOk()" class="text-xs text-red-600 mt-2">Debes tener 18 años o más.</p>
                 </label>
 
-                <label class="block">
-                    <span class="text-slate-700 font-semibold mb-2 block">¿Cuál es tu principal motivo de
-                        consulta?</span>
-                    <textarea v-model="preferences.reason" rows="3" placeholder="Siento ansiedad por las noches..."
+                <div>
+                    <span class="text-slate-700 font-semibold mb-2 block">¿Cuál es tu contexto?</span>
+                    <div class="space-y-2">
+                        <button
+                            v-for="ctx in contexts"
+                            :key="ctx.id"
+                            type="button"
+                            @click="preferences.rol = ctx.id"
+                            class="w-full text-left p-3.5 rounded-xl border-2 transition-all"
+                            :class="preferences.rol === ctx.id
+                                ? 'border-green-600/40 bg-green-50 dark:bg-slate-800 dark:border-slate-500'
+                                : 'border-transparent bg-white dark:bg-slate-900'"
+                        >
+                            <p class="font-medium text-slate-800 dark:text-slate-100">{{ ctx.label }}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">{{ ctx.hint }}</p>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-slate-700 font-semibold mb-2 block">¿Qué te pesa más ahora?</span>
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <button
+                            v-for="preset in reasonPresets"
+                            :key="preset"
+                            type="button"
+                            @click="applyReasonPreset(preset)"
+                            class="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                            :class="preferences.reasonPreset === preset
+                                ? 'bg-green-700 text-white border-green-700'
+                                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'"
+                        >
+                            {{ preset }}
+                        </button>
+                    </div>
+                    <textarea v-model="preferences.reason" rows="3"
+                        placeholder="Puedes ampliar aquí… por ejemplo: me cuesta dormir o me siento solo/a"
                         class="w-full p-4 bg-white dark:bg-slate-900 dark:text-slate-100 border-0 rounded-2xl focus:ring-2 focus:ring-green-600/25 outline-none transition-all placeholder:text-slate-400 resize-none"></textarea>
-                </label>
+                </div>
             </div>
 
-            <button :disabled="!preferences.age || !preferences.reason" @click="nextStep"
-                class="btn-quiet mt-6">
+            <button :disabled="!ageOk() || !preferences.rol || !preferences.reason" @click="nextStep"
+                class="btn-quiet mt-4">
                 Continuar
             </button>
         </div>

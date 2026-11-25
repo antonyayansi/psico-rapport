@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { Send, ArrowLeft, HeartPulse, Search, Info, Trash2, ImagePlus, X, Phone, UserCheck, PawPrint } from 'lucide-vue-next'
+import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { Send, ArrowLeft, HeartPulse, Search, Info, Trash2, ImagePlus, X, Phone, UserCheck, PawPrint, CloudMoon } from 'lucide-vue-next'
 import { db } from '../firebase'
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, deleteDoc, doc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
@@ -11,11 +11,14 @@ import { uploadPostImage } from '../aws'
 import PetAvatar from '../components/PetAvatar.vue'
 import QuietConfirm from '../components/QuietConfirm.vue'
 import { buildStageSystemPrompt, STAGE_META } from '../transition'
-import { DEFAULT_PET_NAME, resolveEmotion } from '../pet'
+import { DEFAULT_PET_NAME, resolveEmotion, rewritePetSelfIntro, buildWelcomeMessage } from '../pet'
 import { runUwuAgent } from '../agent/uwuAgent'
+import { getMedMoment } from '../medSupport'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+const momentBootstrapped = ref(false)
 const showDeleteConfirm = ref(false)
 const inputMsg = ref('')
 const messages = ref([])
@@ -70,7 +73,11 @@ const callPanicLine = () => {
 const systemPromptText = computed(() =>
     buildStageSystemPrompt(
       authStore.transitionStage,
-      authStore.pet?.name || DEFAULT_PET_NAME
+      authStore.pet?.name || DEFAULT_PET_NAME,
+      {
+        rol: authStore.contextoRol,
+        anio_estudio: authStore.anioEstudio
+      }
     )
 )
 
@@ -82,16 +89,20 @@ const petFaceSrc = computed(() => resolveEmotion({
 const stageLabel = computed(() => (STAGE_META[authStore.transitionStage] || STAGE_META.dependency).short)
 
 const getChatHistoryForAPI = () => {
+    const name = petDisplayName.value
     const recent = messages.value.filter(m => m.sender !== 'system').slice(-12)
-    return recent.map(m => ({
-        role: m.sender === 'uwu' ? 'assistant' : 'user',
-        content: m.imageUrl
-            ? [
-                { type: 'text', text: m.text || '(imagen)' },
-                { type: 'image_url', image_url: { url: m.imageUrl, detail: 'low' } }
-              ]
-            : m.text
-    }))
+    return recent.map(m => {
+        const text = m.sender === 'uwu' ? rewritePetSelfIntro(m.text, name) : m.text
+        return {
+            role: m.sender === 'uwu' ? 'assistant' : 'user',
+            content: m.imageUrl
+                ? [
+                    { type: 'text', text: text || '(imagen)' },
+                    { type: 'image_url', image_url: { url: m.imageUrl, detail: 'low' } }
+                  ]
+                : text
+        }
+    })
 }
 
 const runAgentAction = (action) => {
@@ -166,9 +177,17 @@ const sendMessage = async () => {
     // 2. Save user message with optional image URL
     await sendMessageToDB(text, 'user', uploadedImageUrl)
 
-    // 3. Check for crisis keywords before AI response
+    // 3. Daño personal / suicidio → solo protocolo de alarma (sin acompañamiento del agente)
     if (text && detectCrisis(text)) {
       showCrisisOverlay.value = true
+      await loadChosenTherapist()
+      const crisisReply =
+        'Gracias por decirlo. En este momento necesitas apoyo humano de emergencia. En Perú puedes llamar ya a la Línea 113 del MINSA (gratis, 24 horas). Usa el botón de emergencia para llamar.'
+      await sendMessageToDB(crisisReply, 'uwu', null, [
+        { tel: '113', label: 'Llamar línea 113' }
+      ])
+      await processUserAction(authStore.user.uid, 'chat')
+      return
     }
 
     isTyping.value = true
@@ -197,7 +216,10 @@ const sendMessage = async () => {
                 agentStatus.value = status
             }
         })
-        const uwuReply = result.text || 'Estoy aquí. ¿Quieres que mire tu ánimo, tu mascota o los psicólogos disponibles?'
+        const uwuReply = rewritePetSelfIntro(
+            result.text || 'Estoy aquí. ¿Quieres que mire tu ánimo, tu mascota o los psicólogos disponibles?',
+            petDisplayName.value
+        )
         await sendMessageToDB(uwuReply, 'uwu', null, result.actions)
         await processUserAction(authStore.user.uid, 'chat')
         if (result.wroteMood) await authStore.refreshPet()
@@ -218,6 +240,27 @@ const scrollToBottom = () => {
     })
 }
 
+const tryBootstrapMoment = async () => {
+    const momentId = route.query.moment
+    if (!momentId || momentBootstrapped.value || isTyping.value) return
+    const moment = getMedMoment(String(momentId))
+    momentBootstrapped.value = true
+    router.replace({ path: '/uwu', query: {} })
+    if (!moment) return
+    inputMsg.value = moment.starter
+    await nextTick()
+    await sendMessage()
+}
+
+watch(
+    () => [route.query.moment, messages.value.length, isTyping.value],
+    () => {
+        if (route.query.moment && messages.value.length > 0 && !isTyping.value) {
+            tryBootstrapMoment()
+        }
+    }
+)
+
 const deleteChat = () => {
     showDeleteConfirm.value = true
 }
@@ -230,21 +273,35 @@ const confirmDeleteChat = async () => {
     messages.value = messages.value.filter(m => m.sender === 'system')
 }
 
-onMounted(() => {
+onMounted(async () => {
     addSystemMessage('Hoy')
     loadChosenTherapist()
 
+    if (import.meta.env.VITE_MANUAL_SHOTS === '1') {
+        import('../manualShot').then(({ demoChatMessages }) => {
+            messages.value = [messages.value[0], ...demoChatMessages]
+            scrollToBottom()
+        })
+        return
+    }
+
+    if (!authStore.pet) {
+        try { await authStore.refreshPet() } catch (e) { console.warn('Pet preload:', e) }
+    }
+
     const userId = authStore.user.uid
     const q = query(collection(db, 'conversaciones_uwu'), orderBy('timestamp', 'asc'))
+    let welcomeSent = false
 
     onSnapshot(q, (snapshot) => {
+        const name = authStore.pet?.name || DEFAULT_PET_NAME
         const loadedMessages = []
         snapshot.forEach((docSnap) => {
             const data = docSnap.data()
             if (data.id_usuario === userId) {
                 loadedMessages.push({
                     id: docSnap.id,
-                    text: data.mensaje,
+                    text: data.sender === 'uwu' ? rewritePetSelfIntro(data.mensaje, name) : data.mensaje,
                     sender: data.sender,
                     imageUrl: data.imageUrl || null,
                     actions: Array.isArray(data.actions) ? data.actions : [],
@@ -255,8 +312,9 @@ onMounted(() => {
 
         messages.value = [messages.value[0], ...loadedMessages]
 
-        if (loadedMessages.length === 0) {
-            sendMessageToDB(`¡Hola! Soy ${petDisplayName.value}. Me alegra mucho que estés aquí. Cuéntame, ¿cómo te sientes en este momento?`, 'uwu')
+        if (loadedMessages.length === 0 && !welcomeSent) {
+            welcomeSent = true
+            sendMessageToDB(buildWelcomeMessage(name), 'uwu')
         }
 
         scrollToBottom()
@@ -281,9 +339,9 @@ onMounted(() => {
                 <div class="w-full bg-white dark:bg-slate-900 rounded-3xl p-6 space-y-4 shadow-xl">
                     <div class="text-center">
                         <img src="/emociones/temeroso.png" :alt="petDisplayName" class="w-16 h-16 mx-auto mb-3 rounded-[28%] object-cover" />
-                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ petDisplayName }} está aquí contigo</h3>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">Necesitas ayuda ahora</h3>
                         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                            Noto que estás pasando por un momento muy difícil. Tu vida importa, y mereces apoyo real ahora mismo.
+                            Detectamos un momento de riesgo. {{ petDisplayName }} no puede acompañarte aquí: usa el botón de emergencia.
                         </p>
                     </div>
 
@@ -292,8 +350,8 @@ onMounted(() => {
                         class="w-full flex items-center justify-center space-x-3 bg-red-500 text-white py-4 rounded-2xl font-bold active:scale-95 transition-all">
                         <Phone class="w-5 h-5" />
                         <div class="text-left">
-                            <p class="text-sm font-bold">Llamar línea de crisis</p>
-                            <p class="text-xs text-red-100">MINSA — 113 (Perú, gratuito 24/7)</p>
+                            <p class="text-sm font-bold">Botón de emergencia · llamar 113</p>
+                            <p class="text-xs text-red-100">MINSA (Perú, gratis 24/7)</p>
                         </div>
                     </button>
 
@@ -323,7 +381,7 @@ onMounted(() => {
         <!-- ─────────────────────────────────────────────────────── -->
         <!-- Header -->
         <header
-            class="bg-sage-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-between p-4 px-5 z-10 sticky top-0">
+            class="bg-sage-50 dark:bg-slate-900 flex items-center justify-between p-4 px-5 z-10 sticky top-0 border-b border-slate-200/60 dark:border-slate-800">
             <div class="flex items-center space-x-3">
                 <button @click="router.back()" class="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
                     <ArrowLeft class="w-6 h-6 text-slate-600 dark:text-slate-300" />
@@ -349,6 +407,11 @@ onMounted(() => {
                 </div>
             </div>
             <div class="flex space-x-2">
+                <button @click="router.push('/med-support')"
+                    class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+                    title="Momentos difíciles">
+                    <CloudMoon class="w-5 h-5" />
+                </button>
                 <button @click="router.push('/pet')"
                     class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
                     title="Mi mascota">
@@ -455,7 +518,7 @@ onMounted(() => {
         </div>
 
         <!-- Input Area -->
-        <div class="flex-none bg-sage-50/90 dark:bg-slate-900/90 backdrop-blur-md p-3 px-4 z-10 w-full">
+        <div class="flex-none bg-sage-50 dark:bg-slate-900 border-t border-slate-200/60 dark:border-slate-800 p-3 px-4 z-10 w-full">
 
             <!-- Pending image preview -->
             <div v-if="pendingImage" class="mb-2 relative inline-block">

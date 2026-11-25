@@ -3,6 +3,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, doc, getDoc } from 'firebase/firestore'
 import { App as CapacitorApp } from '@capacitor/app'
 import { isAdminEmail } from '../adminEmails'
+import { MANUAL_SHOT } from '../manualShot'
 
 const routes = [
   {
@@ -88,6 +89,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/med-support',
+    name: 'MedSupport',
+    component: () => import('../views/MedSupportView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('../views/AdminView.vue'),
@@ -115,6 +122,8 @@ const getCurrentUser = () => {
 };
 
 router.beforeEach(async (to, from) => {
+  if (MANUAL_SHOT) return true
+
   const user = await getCurrentUser()
 
   if (to.meta.requiresAuth) {

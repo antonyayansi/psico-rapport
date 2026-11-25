@@ -8,10 +8,15 @@ import { initFCM } from './composables/useFCM'
 import { useDesktopGate } from './composables/useDesktopGate'
 import DesktopWelcome from './components/DesktopWelcome.vue'
 import BottomDock from './components/BottomDock.vue'
+import { MANUAL_SHOT, seedAuthStore } from './manualShot'
 
 const { isDesktop } = useDesktopGate()
 
 onMounted(() => {
+    if (MANUAL_SHOT) {
+        seedAuthStore(useAuthStore())
+        return
+    }
     // Listen for auth state changes
     onAuthStateChanged(auth, async (user) => {
         const authStore = useAuthStore()

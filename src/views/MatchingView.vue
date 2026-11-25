@@ -7,6 +7,7 @@ import { useAuthStore } from '../stores/auth'
 import { ArrowLeft, ChevronRight, UserCheck, Stethoscope, CheckCircle2, Share2 } from 'lucide-vue-next'
 import { STAGES } from '../transition'
 import { processUserAction } from '../gamification'
+import { mergeSeedTherapists } from '../seedData'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -17,19 +18,14 @@ const chosenTherapistId = ref(null)
 const savingId = ref(null)
 const shareMoodWithChoice = ref(authStore.moodShareConsent)
 
-const exampleTherapist = {
-    id: 'daniel-hachircana',
-    displayName: 'Dr. Daniel Hachircana Mendez',
-    title: 'Neuropsicólogo Clínico y de Rehabilitación',
-    mainSpecialty: 'Neuropsicología Clínica',
-    subspecialty: 'Daño cerebral adquirido y neuropsicología infantil',
-    photoURL: null,
-    approved: true
-}
-
 const getInitial = (name) => name ? name.charAt(0).toUpperCase() : '?'
 
 onMounted(async () => {
+    if (import.meta.env.VITE_MANUAL_SHOTS === '1') {
+        therapists.value = mergeSeedTherapists([])
+        isLoading.value = false
+        return
+    }
     try {
         const [snap, userDoc] = await Promise.all([
             getDocs(query(collection(db, 'therapists'), where('approved', '==', true))),
@@ -37,14 +33,14 @@ onMounted(async () => {
         ])
         const loaded = []
         snap.forEach(d => loaded.push({ id: d.id, ...d.data() }))
-        therapists.value = loaded.length ? loaded : [exampleTherapist]
+        therapists.value = mergeSeedTherapists(loaded)
         if (userDoc.exists()) {
             chosenTherapistId.value = userDoc.data().chosenTherapistId || null
             shareMoodWithChoice.value = userDoc.data().moodShareConsent === true
         }
     } catch (e) {
         console.error('Error loading therapists:', e)
-        therapists.value = [exampleTherapist]
+        therapists.value = mergeSeedTherapists([])
     } finally {
         isLoading.value = false
     }

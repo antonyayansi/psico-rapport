@@ -10,7 +10,7 @@ import { updatePetMood, PET_EMOTION_LIST, DEFAULT_PET_NAME, PET_EMOTIONS, resolv
 
 const router = useRouter()
 const authStore = useAuthStore()
-const mood = ref('')
+const mood = ref(import.meta.env.VITE_MANUAL_SHOTS === '1' ? 'calma' : '')
 const savedMood = ref(false)
 const selectedEmotion = computed(() => PET_EMOTIONS[mood.value] || null)
 const previewFace = computed(() => resolveEmotion({

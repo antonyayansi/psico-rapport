@@ -43,9 +43,20 @@ export const APP_ACTIONS = {
   open_diary: { route: '/tracking', label: 'Registrar ánimo' },
   open_therapists: { route: '/therapists', label: 'Ver psicólogos' },
   open_matching: { route: '/matching', label: 'Encontrar terapeuta' },
-  open_pet: { route: '/pet', label: `Cuidar a ${DEFAULT_PET_NAME}` },
+  open_pet: { route: '/pet', label: 'Cuidar a tu mascota' },
+  open_med_support: { route: '/med-support', label: 'Momentos difíciles' },
   open_stats: { route: '/stats', label: 'Ver mi progreso' },
   call_crisis: { tel: '113', label: 'Llamar línea 113' }
+}
+
+function resolveAppAction(action, petName = DEFAULT_PET_NAME) {
+  const meta = APP_ACTIONS[action]
+  if (!meta) return null
+  if (action === 'open_pet') {
+    const name = (petName || DEFAULT_PET_NAME).trim() || DEFAULT_PET_NAME
+    return { ...meta, label: `Cuidar a ${name}` }
+  }
+  return { ...meta }
 }
 
 export const TOOL_STATUS = {
@@ -96,7 +107,7 @@ export const OPENAI_TOOLS = [
     function: {
       name: 'get_pet_state',
       description:
-        `Estado actual de la mascota ODT (nombre, emoción, hambre, felicidad, energía). Úsalo si preguntan por ${DEFAULT_PET_NAME} o por cómo está la mascota.`,
+        'Estado actual de la mascota ODT (nombre personalizado, emoción, hambre, felicidad, energía). Úsalo si preguntan por la mascota o por cómo está. Usa siempre el nombre que devuelve el tool, nunca asumas "Qori".',
       parameters: { type: 'object', properties: {}, additionalProperties: false }
     }
   },
@@ -155,7 +166,7 @@ export const OPENAI_TOOLS = [
     function: {
       name: 'get_crisis_resources',
       description:
-        'Recursos de crisis en Perú (línea 113) y, si aplica, el terapeuta elegido. Úsalo si hay desesperanza, ideación, daño o pedido urgente de ayuda.',
+        'PROTOCOLO DE ALARMA solo para suicidio, ideación de muerte, autolesión o “terminar con todo”. NO lo uses si cuenta que otra persona le pegó, violencia familiar, tristeza o ansiedad. Tras usarlo: respuesta corta, sin acompañar, deriva a 113.',
       parameters: { type: 'object', properties: {}, additionalProperties: false }
     }
   },
@@ -214,7 +225,7 @@ export const OPENAI_TOOLS = [
     function: {
       name: 'propose_app_action',
       description:
-        'Muestra un botón en el chat para abrir una pantalla de la app. Úsalo cuando el siguiente paso sea ir al diario, psicólogos, matching, mascota, progreso o llamar 113.',
+        'Muestra un botón en el chat para abrir una pantalla de la app. Úsalo cuando el siguiente paso sea ir al diario, psicólogos, matching, mascota, momentos difíciles, progreso o llamar 113.',
       parameters: {
         type: 'object',
         properties: {
@@ -258,13 +269,14 @@ function publicTherapist(id, data = {}) {
 }
 
 async function loadApprovedTherapists() {
+  const { mergeSeedTherapists } = await import('../seedData')
   try {
     const snap = await getDocs(query(collection(db, 'therapists'), where('approved', '==', true)))
     const list = []
-    snap.forEach((d) => list.push(publicTherapist(d.id, d.data())))
-    return list.length ? list : [publicTherapist(EXAMPLE_THERAPIST.id, EXAMPLE_THERAPIST)]
+    snap.forEach((d) => list.push({ id: d.id, ...d.data() }))
+    return mergeSeedTherapists(list).map((t) => publicTherapist(t.id, t))
   } catch {
-    return [publicTherapist(EXAMPLE_THERAPIST.id, EXAMPLE_THERAPIST)]
+    return mergeSeedTherapists([EXAMPLE_THERAPIST]).map((t) => publicTherapist(t.id, t))
   }
 }
 
@@ -281,6 +293,8 @@ async function getPatientProfile(uid) {
   return {
     edad: pref.edad || null,
     motivo_consulta: pref.motivo_consulta || null,
+    rol: pref.rol || pref.contexto_rol || null,
+    anio_estudio: pref.anio_estudio || null,
     estilo_terapeuta: style || null,
     estilo_terapeuta_label: THERAPY_STYLE_LABELS[style] || style || null,
     etapa: stage,
@@ -419,7 +433,7 @@ async function getCrisisResources(uid) {
     },
     terapeuta: mine.tiene_terapeuta ? mine.terapeuta : null,
     instruccion:
-      'Valida el malestar, no des consejos de métodos, y prioriza pedir ayuda humana ahora. La app no sustituye emergencias.'
+      'Solo aplica a suicidio/autolesión. No brindes ayuda emocional ni explores la causa. Respuesta corta: deriva YA a Línea 113 MINSA y al botón de emergencia. Si el tema era violencia de terceros u otra emoción, NO debiste llamar este tool: acompaña en su lugar.'
   }
 }
 
@@ -522,8 +536,17 @@ async function logMood(uid, emotionId, note) {
   }
 }
 
-function proposeAppAction(action) {
-  const meta = APP_ACTIONS[action]
+async function proposeAppAction(uid, action) {
+  let petName = DEFAULT_PET_NAME
+  if (action === 'open_pet') {
+    try {
+      const pet = await getPetState(uid)
+      if (pet?.nombre) petName = pet.nombre
+    } catch {
+      /* fallback DEFAULT_PET_NAME */
+    }
+  }
+  const meta = resolveAppAction(action, petName)
   if (!meta) return { ok: false, error: 'Acción no válida' }
   return {
     ok: true,
@@ -561,7 +584,7 @@ export async function executeUwuTool(uid, name, args = {}) {
       case 'log_mood':
         return await logMood(uid, args.emotion, args.note)
       case 'propose_app_action':
-        return proposeAppAction(args.action)
+        return proposeAppAction(uid, args.action)
       default:
         return { error: `Herramienta desconocida: ${name}` }
     }

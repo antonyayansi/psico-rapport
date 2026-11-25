@@ -17,9 +17,12 @@ export const useAuthStore = defineStore('auth', () => {
   const chosenTherapistId = ref(null)
   const chosenTherapistName = ref(null)
   const pet = ref(null)
+  const contextoRol = ref(null) // medicina | ciencias_salud | otro
+  const anioEstudio = ref(null)
 
   const isTherapist = computed(() => userRole.value === 'therapist' || userRole.value === 'admin')
   const isAdmin = computed(() => userRole.value === 'admin' || isAdminEmail(user.value?.email))
+  const isHealthStudent = computed(() => contextoRol.value === 'medicina' || contextoRol.value === 'ciencias_salud')
 
   async function setUser(newUser) {
     if (newUser instanceof Object && 'uid' in newUser) {
@@ -36,6 +39,8 @@ export const useAuthStore = defineStore('auth', () => {
       chosenTherapistId.value = null
       chosenTherapistName.value = null
       pet.value = null
+      contextoRol.value = null
+      anioEstudio.value = null
     }
   }
 
@@ -80,6 +85,20 @@ export const useAuthStore = defineStore('auth', () => {
         consentAccepted.value = false
         transitionStage.value = STAGES.dependency
         moodShareConsent.value = false
+      }
+
+      try {
+        const prefDoc = await getDoc(doc(db, 'preferencias', uid))
+        if (prefDoc.exists()) {
+          const pref = prefDoc.data()
+          contextoRol.value = pref.rol || pref.contexto_rol || null
+          anioEstudio.value = pref.anio_estudio || null
+        } else {
+          contextoRol.value = null
+          anioEstudio.value = null
+        }
+      } catch (prefErr) {
+        console.warn('Preferencias load skipped:', prefErr)
       }
 
       try {
@@ -133,6 +152,23 @@ export const useAuthStore = defineStore('auth', () => {
     pet.value = await ensurePet(user.value.uid)
   }
 
+  async function saveContextoFormacion({ rol, anio_estudio } = {}) {
+    if (!user.value) return
+    const payload = {
+      id_usuario: user.value.uid,
+      updatedAt: new Date()
+    }
+    if (rol) {
+      payload.rol = rol
+      contextoRol.value = rol
+    }
+    if (anio_estudio !== undefined) {
+      payload.anio_estudio = anio_estudio || null
+      anioEstudio.value = anio_estudio || null
+    }
+    await setDoc(doc(db, 'preferencias', user.value.uid), payload, { merge: true })
+  }
+
   return {
     user,
     userRole,
@@ -144,13 +180,17 @@ export const useAuthStore = defineStore('auth', () => {
     chosenTherapistId,
     chosenTherapistName,
     pet,
+    contextoRol,
+    anioEstudio,
     isTherapist,
     isAdmin,
+    isHealthStudent,
     setUser,
     loadUserProfile,
     acceptConsent,
     setMoodShareConsent,
     setTransitionStage,
-    refreshPet
+    refreshPet,
+    saveContextoFormacion
   }
 })

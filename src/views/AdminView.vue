@@ -3,12 +3,13 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { db } from '../firebase'
 import {
-  collection, getDocs, doc, setDoc, updateDoc, serverTimestamp
+  collection, getDocs, doc, setDoc, updateDoc, serverTimestamp, Timestamp
 } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
 import {
-  ArrowLeft, ShieldCheck, CheckCircle2, XCircle, Stethoscope, Loader2
+  ArrowLeft, ShieldCheck, CheckCircle2, XCircle, Stethoscope, Loader2, Users
 } from 'lucide-vue-next'
+import { SEED_THERAPISTS, SEED_COMMUNITY_POSTS } from '../seedData'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -16,6 +17,7 @@ const authStore = useAuthStore()
 const applications = ref([])
 const isLoading = ref(true)
 const actingId = ref(null)
+const seeding = ref(false)
 const filter = ref('pending') // pending | approved | rejected | all
 const toast = ref('')
 
@@ -121,6 +123,41 @@ const statusBadge = (status) => {
   if (status === 'rejected') return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
   return 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
 }
+
+const publishSeedCatalog = async () => {
+  seeding.value = true
+  try {
+    for (const t of SEED_THERAPISTS) {
+      const { id, ...data } = t
+      await setDoc(doc(db, 'therapists', id), {
+        ...data,
+        approved: true,
+        approvedAt: serverTimestamp(),
+        approvedBy: authStore.user.uid
+      }, { merge: true })
+    }
+    const now = Date.now()
+    for (const p of SEED_COMMUNITY_POSTS) {
+      await setDoc(doc(db, 'community_posts', p.id), {
+        content: p.content,
+        imageUrl: null,
+        authorId: p.authorId,
+        authorName: p.authorName,
+        authorPhotoUrl: p.authorPhotoUrl || null,
+        isTherapistPost: true,
+        likedBy: p.likedBy || [],
+        comments: p.comments || [],
+        timestamp: Timestamp.fromDate(new Date(now - (p.minutesAgo || 60) * 60 * 1000))
+      }, { merge: true })
+    }
+    showToast(`Catálogo publicado: ${SEED_THERAPISTS.length} terapeutas y posts de ayuda`)
+  } catch (e) {
+    console.error(e)
+    showToast('No se pudo publicar el catálogo')
+  } finally {
+    seeding.value = false
+  }
+}
 </script>
 
 <template>
@@ -139,6 +176,17 @@ const statusBadge = (status) => {
       <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
         Solo súper usuarios pueden verificar colegiatura y autorizar terapeutas en el directorio.
       </p>
+
+      <button
+        type="button"
+        :disabled="seeding"
+        class="w-full flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 py-3 rounded-2xl text-sm font-bold disabled:opacity-50"
+        @click="publishSeedCatalog"
+      >
+        <Loader2 v-if="seeding" class="w-4 h-4 animate-spin" />
+        <Users v-else class="w-4 h-4" />
+        Publicar {{ SEED_THERAPISTS.length }} terapeutas y posts de ayuda
+      </button>
 
       <div class="flex gap-2 overflow-x-auto pb-1">
         <button

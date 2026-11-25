@@ -9,6 +9,7 @@ import { uploadPostImage, deleteFileFromS3 } from '../aws'
 import { processUserAction } from '../gamification'
 import { DEFAULT_PET_NAME, isPetAuthorName } from '../pet'
 import QuietConfirm from '../components/QuietConfirm.vue'
+import { mergeSeedCommunityPosts } from '../seedData'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -145,26 +146,35 @@ const publishPost = async () => {
 
 const toggleLike = async (post) => {
     try {
-        const postRef = doc(db, 'community_posts', post.id)
         const activeUid = authStore.user.uid
-        // Manejar retrocompatibilidad si venia del array vacio y verificar inclusion
         const likesArray = post.likedBy || []
+        const liked = likesArray.includes(activeUid)
 
-        if (likesArray.includes(activeUid)) {
-            await updateDoc(postRef, {
-                likedBy: arrayRemove(activeUid)
-            })
+        if (String(post.id).startsWith('seed-post-')) {
+            post.likedBy = liked
+                ? likesArray.filter((id) => id !== activeUid)
+                : [...likesArray, activeUid]
+            return
+        }
+
+        const postRef = doc(db, 'community_posts', post.id)
+        if (liked) {
+            await updateDoc(postRef, { likedBy: arrayRemove(activeUid) })
         } else {
-            await updateDoc(postRef, {
-                likedBy: arrayUnion(activeUid)
-            })
+            await updateDoc(postRef, { likedBy: arrayUnion(activeUid) })
         }
     } catch (e) {
         console.error(e)
     }
 }
 
-onMounted(() => {
+onMounted(async () => {
+    if (import.meta.env.VITE_MANUAL_SHOTS === '1') {
+        const { demoCommunityPosts } = await import('../manualShot')
+        posts.value = mergeSeedCommunityPosts(demoCommunityPosts)
+        return
+    }
+
     const q = query(collection(db, 'community_posts'), orderBy('timestamp', 'desc'))
 
     onSnapshot(q, (snapshot) => {
@@ -178,7 +188,7 @@ onMounted(() => {
                 time: data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Ahora'
             })
         })
-        posts.value = loaded
+        posts.value = mergeSeedCommunityPosts(loaded)
     })
 })
 
@@ -222,7 +232,7 @@ const confirmDeletePost = async () => {
             @confirm="confirmDeletePost"
         />
         <header
-            class="px-6 pt-5 pb-3 sticky top-0 z-10 bg-sage-50/90 dark:bg-slate-950/90 backdrop-blur-md">
+            class="px-6 pt-5 pb-3 sticky top-0 z-10 bg-sage-50 dark:bg-slate-950 border-b border-slate-200/60 dark:border-slate-800">
             <h1 class="font-display text-2xl text-center text-ink">El refugio</h1>
             <p class="text-xs text-slate-400 text-center mt-0.5">
                 Un lugar para escribir sin prisa
@@ -274,7 +284,7 @@ const confirmDeletePost = async () => {
                 <Lock class="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
                 <div>
                     <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Solo los terapeutas verificados pueden publicar</p>
-                    <p class="text-xs text-slate-500 mt-0.5">Puedes comentar y dar 💙 en las publicaciones. Tienes {{ MAX_USER_COMMENTS_PER_DAY - userCommentsToday }} comentarios disponibles hoy.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Para comentar, entra a una publicación. Tienes {{ Math.max(0, MAX_USER_COMMENTS_PER_DAY - userCommentsToday) }} comentarios disponibles hoy.</p>
                     <button @click="router.push('/therapist-register')"
                         class="mt-2 text-xs text-green-600 dark:text-green-400 font-semibold">¿Eres terapeuta? Regístrate →</button>
                 </div>
@@ -340,7 +350,7 @@ const confirmDeletePost = async () => {
                         class="mt-4 space-y-3 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
                         <div v-for="c in post.comments.slice(-2)" :key="c.id" class="flex space-x-3">
                             <img
-                                v-if="c.isPet || isPetAuthorName(c.authorName)"
+                                v-if="c.isPet || isPetAuthorName(c.authorName, authStore.pet?.name)"
                                 src="/emociones/calma.png"
                                 :alt="c.authorName"
                                 class="w-6 h-6 rounded-[28%] object-cover mt-1 flex-shrink-0"
@@ -351,7 +361,7 @@ const confirmDeletePost = async () => {
                                 v-else>{{ c.authorName.charAt(0) }}</div>
                             <div>
                                 <span class="text-xs font-bold block text-slate-800 dark:text-slate-200"
-                                    :class="{ 'text-amber-700 dark:text-amber-400': c.isPet || isPetAuthorName(c.authorName) }">{{
+                                    :class="{ 'text-amber-700 dark:text-amber-400': c.isPet || isPetAuthorName(c.authorName, authStore.pet?.name) }">{{
                                         c.authorName }}</span>
                                 <p v-if="c.type === 'gif'"
                                     class="text-xs text-slate-600 leading-relaxed italic border-l-2 border-indigo-200 pl-2 opacity-80">

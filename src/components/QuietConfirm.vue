@@ -27,14 +27,14 @@ const accept = () => {
       >
         <button
           type="button"
-          class="absolute inset-0 bg-zinc-950/50 backdrop-blur-[6px]"
+          class="absolute inset-0 bg-zinc-950/50"
           aria-label="Cerrar"
           @click="close"
         />
         <div
           role="dialog"
           aria-modal="true"
-          class="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[1.75rem] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.28)]"
+          class="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[1.25rem] p-6 border border-slate-200/80 dark:border-zinc-800 shadow-[0_12px_32px_rgba(0,0,0,0.18)]"
         >
           <div class="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-300 flex items-center justify-center mx-auto mb-4">
             <Trash2 class="w-5 h-5" />

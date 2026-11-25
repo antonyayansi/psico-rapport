@@ -103,8 +103,28 @@ export function getMoodFace(levelOrKey) {
   return resolveEmotion({ moodLevel: levelOrKey })
 }
 
-export function isPetAuthorName(name = '') {
-  return /psico\s?rapport|qori|uwu/i.test(String(name))
+export function isPetAuthorName(name = '', currentPetName = '') {
+  const n = String(name || '').trim().toLowerCase()
+  if (!n) return false
+  if (/psico\s?rapport|qori|uwu/i.test(n)) return true
+  const current = String(currentPetName || '').trim().toLowerCase()
+  return !!current && n === current
+}
+
+/** Corrige presentaciones viejas ("Soy Qori") al nombre actual de la mascota. */
+export function rewritePetSelfIntro(text, petName = DEFAULT_PET_NAME) {
+  const name = (petName || DEFAULT_PET_NAME).trim() || DEFAULT_PET_NAME
+  let out = String(text || '')
+  out = out.replace(/¡Hola!\s*Soy\s+[^.!?\n]+[.!]?/gi, `¡Hola! Soy ${name}.`)
+  if (name.toLowerCase() !== 'qori') {
+    out = out.replace(/\bSoy\s+Qori\b/gi, `Soy ${name}`)
+  }
+  return out
+}
+
+export function buildWelcomeMessage(petName = DEFAULT_PET_NAME) {
+  const name = (petName || DEFAULT_PET_NAME).trim() || DEFAULT_PET_NAME
+  return `Hola, soy ${name}. Estoy aquí contigo, sin prisa. Cuando quieras, cuéntame cómo te va hoy o qué te pesa.`
 }
 
 export function defaultPet(uid, name = DEFAULT_PET_NAME) {

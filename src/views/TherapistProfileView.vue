@@ -4,60 +4,29 @@ import { useRouter, useRoute } from 'vue-router'
 import { db } from '../firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import { ArrowLeft, GraduationCap, Briefcase, Award, MapPin, Phone } from 'lucide-vue-next'
+import { getSeedTherapist } from '../seedData'
 
 const router = useRouter()
 const route = useRoute()
 const therapist = ref(null)
 const isLoading = ref(true)
 
-// Perfil de ejemplo del Dr. Daniel Hachircana Mendez
-const exampleProfile = {
-  id: 'daniel-hachircana',
-  displayName: 'Dr. Daniel Hachircana Mendez',
-  title: 'Neuropsicólogo Clínico y de Rehabilitación',
-  photoURL: null,
-  mainSpecialty: 'Neuropsicología Clínica y de Rehabilitación',
-  subspecialty: 'Subespecialidad en daño cerebral adquirido y neuropsicología infantil',
-  focusAreas: [
-    'Evaluación y diagnóstico diferencial de trastornos cognitivos (demencias, TDAH, TEA, trastornos del aprendizaje).',
-    'Rehabilitación neuropsicológica postraumática y post-ACV.',
-    'Intervención en dificultades de memoria, funciones ejecutivas y atención.',
-    'Peritaje neuropsicológico forense.'
-  ],
-  experience: [
-    { period: '2020 – actual', role: 'Neuropsicólogo jefe', institution: 'Centro de Rehabilitación Cognitiva Integra, Santiago.' },
-    { period: '2015 – 2020', role: 'Neuropsicólogo clínico', institution: 'Hospital Clínico Universidad de Los Andes.' },
-    { period: '2007 – 2015', role: 'Evaluador e investigador', institution: 'Laboratorio de Neurociencias Cognitivas, Universidad de España.' }
-  ],
-  education: [
-    { degree: 'Doctorado en Neurociencias', institution: 'Universidad de Barcelona', year: '2012' },
-    { degree: 'Magíster en Neuropsicología Clínica', institution: 'Universidad Autónoma de Madrid', year: '2008' },
-    { degree: 'Psicólogo', institution: 'Pontificia Universidad Católica de Chile', year: '2005' }
-  ],
-  certifications: [
-    'Certificado en Evaluación Neuropsicológica (ABN, España).',
-    'Miembro activo de la Sociedad Latinoamericana de Neuropsicología (SLAN).'
-  ],
-  approved: true
-}
-
 onMounted(async () => {
   const id = route.params.id
-  if (id === 'daniel-hachircana') {
-    therapist.value = exampleProfile
-    isLoading.value = false
-    return
-  }
+  const seeded = getSeedTherapist(id)
   try {
     const docSnap = await getDoc(doc(db, 'therapists', id))
     if (docSnap.exists()) {
       therapist.value = { id: docSnap.id, ...docSnap.data() }
+    } else if (seeded) {
+      therapist.value = seeded
     } else {
       router.replace('/therapists')
     }
   } catch (e) {
     console.error(e)
-    router.replace('/therapists')
+    if (seeded) therapist.value = seeded
+    else router.replace('/therapists')
   } finally {
     isLoading.value = false
   }

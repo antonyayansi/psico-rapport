@@ -6,6 +6,7 @@ import { db } from '../firebase'
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
 import { isPetAuthorName } from '../pet'
+import { SEED_COMMUNITY_POSTS } from '../seedData'
 
 const router = useRouter()
 const route = useRoute()
@@ -16,6 +17,7 @@ const post = ref(null)
 const newComment = ref('')
 const isPublishing = ref(false)
 const showGifDrawer = ref(false)
+const commentError = ref('')
 const gifSearchQuery = ref('')
 const isSearchingGifs = ref(false)
 
@@ -74,6 +76,26 @@ watch(gifSearchQuery, (newVal) => {
 
 let unsubscribe = null
 
+const loadSeedPost = () => {
+    const seeded = SEED_COMMUNITY_POSTS.find((p) => p.id === postId)
+    if (!seeded) return false
+    const date = new Date(Date.now() - (seeded.minutesAgo || 60) * 60 * 1000)
+    post.value = {
+        id: seeded.id,
+        content: seeded.content,
+        imageUrl: null,
+        authorId: seeded.authorId,
+        authorName: seeded.authorName,
+        authorPhotoUrl: seeded.authorPhotoUrl,
+        isTherapistPost: true,
+        likedBy: [...(seeded.likedBy || [])],
+        comments: [...(seeded.comments || [])],
+        time: date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        _localSeed: true
+    }
+    return true
+}
+
 onMounted(() => {
     const postRef = doc(db, 'community_posts', postId)
     unsubscribe = onSnapshot(postRef, (docSnap) => {
@@ -85,9 +107,11 @@ onMounted(() => {
                 likedBy: data.likedBy || [],
                 time: data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '...'
             }
-        } else {
+        } else if (!loadSeedPost()) {
             router.push('/community')
         }
+    }, () => {
+        if (!loadSeedPost()) router.push('/community')
     })
 })
 
@@ -101,28 +125,36 @@ const sendComment = async (type = 'text', content = '') => {
     if (!canComment.value) return
 
     isPublishing.value = true
+    commentError.value = ''
     if (type === 'gif') showGifDrawer.value = false
 
+    const comment = {
+        id: Date.now(),
+        type: type,
+        text: type === 'text' ? finalContent : '',
+        gifUrl: type === 'gif' ? finalContent : '',
+        authorId: authStore.user.uid,
+        authorName: authStore.user.displayName ? authStore.user.displayName.split(' ')[0] : 'Explorador',
+        authorPhotoUrl: authStore.user.photoURL || null,
+        date: new Date().toISOString()
+    }
+
     try {
-        const postRef = doc(db, 'community_posts', postId)
-        await updateDoc(postRef, {
-            comments: arrayUnion({
-                id: Date.now(),
-                type: type,
-                text: type === 'text' ? finalContent : '',
-                gifUrl: type === 'gif' ? finalContent : '',
-                authorId: authStore.user.uid,
-                authorName: authStore.user.displayName ? authStore.user.displayName.split(' ')[0] : 'Explorador',
-                authorPhotoUrl: authStore.user.photoURL || null,
-                date: new Date().toISOString()
+        if (post.value?._localSeed || String(postId).startsWith('seed-post-')) {
+            post.value.comments = [...(post.value.comments || []), comment]
+            post.value._localSeed = true
+        } else {
+            await updateDoc(doc(db, 'community_posts', postId), {
+                comments: arrayUnion(comment)
             })
-        })
+        }
 
         if (type === 'text') {
             newComment.value = ''
         }
     } catch (e) {
         console.error("Error sending comment", e)
+        commentError.value = 'No se pudo enviar el comentario. Intenta de nuevo.'
     } finally {
         isPublishing.value = false
     }
@@ -131,11 +163,19 @@ const sendComment = async (type = 'text', content = '') => {
 const toggleLike = async () => {
     if (!post.value) return
     try {
-        const postRef = doc(db, 'community_posts', post.value.id)
         const activeUid = authStore.user.uid
         const likesArray = post.value.likedBy || []
+        const liked = likesArray.includes(activeUid)
 
-        if (likesArray.includes(activeUid)) {
+        if (post.value._localSeed) {
+            post.value.likedBy = liked
+                ? likesArray.filter((id) => id !== activeUid)
+                : [...likesArray, activeUid]
+            return
+        }
+
+        const postRef = doc(db, 'community_posts', post.value.id)
+        if (liked) {
             await updateDoc(postRef, { likedBy: arrayRemove(activeUid) })
         } else {
             await updateDoc(postRef, { likedBy: arrayUnion(activeUid) })
@@ -152,7 +192,7 @@ const isLikedByUser = () => {
 </script>
 
 <template>
-    <div dir="ltr" class="h-[100dvh] flex flex-col bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
+    <div dir="ltr" class="h-full flex flex-col bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
         <!-- Header -->
         <header
             class="flex-none bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 p-4 px-6 z-20 flex items-center">
@@ -161,13 +201,13 @@ const isLikedByUser = () => {
                 <ArrowLeft class="w-6 h-6" />
             </button>
             <div class="ml-3">
-                <h1 class="font-bold text-lg leading-tight text-slate-900 dark:text-slate-100">Comunidad</h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">Hilo de Conversación</p>
+                <h1 class="font-bold text-lg leading-tight text-slate-900 dark:text-slate-100">El refugio</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">Hilo de conversación</p>
             </div>
         </header>
 
         <!-- Main Scrollable Area -->
-        <div class="flex-1 overflow-y-auto w-full smooth-scrollbar pb-32">
+        <div class="flex-1 overflow-y-auto w-full smooth-scrollbar pb-4 min-h-0">
             <!-- Skeleton Loading -->
             <div v-if="!post" class="p-6 space-y-4 animate-pulse">
                 <div class="h-24 bg-slate-200 dark:bg-slate-800 rounded-3xl"></div>
@@ -223,7 +263,7 @@ const isLikedByUser = () => {
 
                     <div v-for="c in post.comments" :key="c.id" class="flex space-x-3 px-1 animate-fade-in-up">
                         <img
-                            v-if="c.isPet || isPetAuthorName(c.authorName)"
+                            v-if="c.isPet || isPetAuthorName(c.authorName, authStore.pet?.name)"
                             src="/emociones/calma.png"
                             :alt="c.authorName"
                             class="w-8 h-8 rounded-[28%] object-cover mt-1 flex-shrink-0"
@@ -235,11 +275,11 @@ const isLikedByUser = () => {
 
                         <div class="flex-1 bg-white dark:bg-slate-900 p-4 rounded-3xl rounded-tl-sm border border-slate-100 dark:border-slate-800 relative">
                             <!-- Si es de la IA -->
-                            <Sparkles v-if="c.isPet || isPetAuthorName(c.authorName)"
+                            <Sparkles v-if="c.isPet || isPetAuthorName(c.authorName, authStore.pet?.name)"
                                 class="w-3 h-3 text-amber-400 absolute top-3 right-4 opacity-50" />
 
                             <span class="text-xs font-bold block text-slate-800 dark:text-slate-200 mb-1"
-                                :class="{ 'text-amber-700 dark:text-amber-400': c.isPet || isPetAuthorName(c.authorName) }">{{ c.authorName }}</span>
+                                :class="{ 'text-amber-700 dark:text-amber-400': c.isPet || isPetAuthorName(c.authorName, authStore.pet?.name) }">{{ c.authorName }}</span>
 
                             <div v-if="c.type === 'gif'"
                                 class="mt-2 text-center rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800">
@@ -258,65 +298,61 @@ const isLikedByUser = () => {
             </div>
         </div>
 
-        <!-- GIF Drawer (Flotante) -->
-        <div :class="showGifDrawer ? 'translate-y-0 opacity-100 visible' : 'translate-y-full opacity-0 invisible'"
-            class="absolute bottom-[4.5rem] left-0 w-full z-10 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
-            <div class="mx-auto max-w-sm w-[95%] bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 mb-2">
-                <div class="flex justify-between items-center mb-3">
-                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Enviar GIF de Apoyo</span>
-                    <button @click="showGifDrawer = false"
-                        class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-1.5 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
-                        <X class="w-4 h-4" />
-                    </button>
-                </div>
+        <!-- Composer: queda encima del dock, no tapado -->
+        <div class="relative flex-none bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-800/50 z-20">
+            <div
+                v-if="showGifDrawer && canComment"
+                class="absolute bottom-full left-0 w-full pb-2"
+            >
+                <div class="mx-auto max-w-sm w-[95%] bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 shadow-lg">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Enviar GIF de apoyo</span>
+                        <button @click="showGifDrawer = false"
+                            class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-1.5 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
+                            <X class="w-4 h-4" />
+                        </button>
+                    </div>
 
-                <div class="mb-3 relative">
-                    <input v-model="gifSearchQuery" type="text" placeholder="Buscar GIFs..."
-                        class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-2 pl-3 pr-10 text-sm outline-none focus:ring-2 focus:ring-green-500/20 text-slate-700 dark:text-slate-200 placeholder:text-slate-400" />
-                    <Search class="w-4 h-4 text-slate-400 absolute right-3 top-2.5" />
-                    <div v-if="isSearchingGifs" class="absolute right-9 top-2.5 flex items-center h-5">
-                        <span
-                            class="w-3 h-3 border-2 border-slate-200 border-t-green-500 rounded-full animate-spin block"></span>
+                    <div class="mb-3 relative">
+                        <input v-model="gifSearchQuery" type="text" placeholder="Buscar GIFs..."
+                            class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-2 pl-3 pr-10 text-sm outline-none focus:ring-2 focus:ring-green-500/20 text-slate-700 dark:text-slate-200 placeholder:text-slate-400" />
+                        <Search class="w-4 h-4 text-slate-400 absolute right-3 top-2.5" />
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1 smooth-scrollbar">
+                        <button v-for="(gif, i) in currentGifs" :key="i" @click="sendComment('gif', gif)"
+                            class="rounded-xl overflow-hidden active:scale-95 transition-transform bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-green-200 dark:hover:border-green-700">
+                            <img :src="gif" class="w-full h-24 object-cover mix-blend-multiply dark:mix-blend-normal" loading="lazy" />
+                        </button>
                     </div>
                 </div>
+            </div>
 
-                <div class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1 smooth-scrollbar">
-                    <button v-for="(gif, i) in currentGifs" :key="i" @click="sendComment('gif', gif)"
-                        class="rounded-xl overflow-hidden active:scale-95 transition-transform bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-green-200 dark:hover:border-green-700">
-                        <img :src="gif" class="w-full h-24 object-cover mix-blend-multiply dark:mix-blend-normal" loading="lazy" />
+            <div class="p-3 px-4">
+                <p v-if="commentError" class="text-xs text-red-600 mb-2 px-1">{{ commentError }}</p>
+                <div v-if="!canComment"
+                    class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                    <Lock class="w-4 h-4 flex-shrink-0" />
+                    <span>Has alcanzado el límite de {{ MAX_USER_COMMENTS_PER_POST }} comentarios en esta publicación.</span>
+                </div>
+
+                <div v-else
+                    class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-full pr-1.5 focus-within:ring-2 focus-within:ring-green-500/20 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
+                    <button @click="showGifDrawer = !showGifDrawer"
+                        class="ml-2 p-2 rounded-full cursor-pointer text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                        title="Enviar estampa GIF">
+                        <Sparkles class="w-5 h-5" />
+                    </button>
+
+                    <input v-model="newComment" @keyup.enter="sendComment('text')" type="text"
+                        placeholder="Escribe una respuesta amable..."
+                        class="flex-1 bg-transparent border-none py-3.5 px-2 outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400 text-sm" />
+
+                    <button @click="sendComment('text')" :disabled="!newComment.trim() || isPublishing"
+                        class="p-2.5 rounded-full text-white bg-green-500 disabled:bg-slate-300 disabled:text-slate-100 hover:bg-green-600 transition-colors">
+                        <Send class="w-4 h-4 -ml-0.5 mt-0.5" />
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Input Footer Constrained -->
-        <div
-            class="absolute bottom-0 left-0 w-full flex-none bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-800/50 p-3 px-4 z-20">
-
-            <!-- Límite alcanzado para usuarios normales -->
-            <div v-if="!canComment"
-                class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
-                <Lock class="w-4 h-4 flex-shrink-0" />
-                <span>Has alcanzado el límite de {{ MAX_USER_COMMENTS_PER_POST }} comentarios en esta publicación.</span>
-            </div>
-
-            <div v-else
-                class="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-full pr-1.5 focus-within:ring-2 focus-within:ring-green-500/20 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all">
-                <!-- Botón de Sticker/GIF -->
-                <button @click="showGifDrawer = !showGifDrawer"
-                    class="ml-2 p-2 rounded-full cursor-pointer text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
-                    title="Enviar Estampa GIF">
-                    <Sparkles class="w-5 h-5" />
-                </button>
-
-                <input v-model="newComment" @keyup.enter="sendComment('text')" type="text"
-                    placeholder="Escribe una respuesta amable..."
-                    class="flex-1 bg-transparent border-none py-3.5 px-2 outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400 text-sm" />
-
-                <button @click="sendComment('text')" :disabled="!newComment.trim() || isPublishing"
-                    class="p-2.5 rounded-full text-white bg-green-500 disabled:bg-slate-300 disabled:text-slate-100 hover:bg-green-600 transition-colors ">
-                    <Send class="w-4 h-4 -ml-0.5 mt-0.5" />
-                </button>
             </div>
         </div>
     </div>

@@ -5,6 +5,7 @@ import { db } from '../firebase'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { useAuthStore } from '../stores/auth'
 import { Search, UserCheck, ChevronRight, Stethoscope, Plus, ShieldCheck } from 'lucide-vue-next'
+import { mergeSeedTherapists } from '../seedData'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -12,27 +13,21 @@ const therapists = ref([])
 const searchQuery = ref('')
 const isLoading = ref(true)
 
-// Terapeuta ejemplo (Dr. Daniel Hachircana) que se muestra mientras se carga Firestore
-const exampleTherapist = {
-  id: 'daniel-hachircana',
-  displayName: 'Dr. Daniel Hachircana Mendez',
-  title: 'Neuropsicólogo Clínico y de Rehabilitación',
-  mainSpecialty: 'Neuropsicología Clínica',
-  subspecialty: 'Daño cerebral adquirido y neuropsicología infantil',
-  photoURL: null,
-  approved: true,
-  isExample: true
-}
-
 onMounted(async () => {
+  if (import.meta.env.VITE_MANUAL_SHOTS === '1') {
+    therapists.value = mergeSeedTherapists([])
+    isLoading.value = false
+    return
+  }
   try {
     const q = query(collection(db, 'therapists'), where('approved', '==', true))
     const snap = await getDocs(q)
     const loaded = []
     snap.forEach(d => loaded.push({ id: d.id, ...d.data() }))
-    therapists.value = loaded
+    therapists.value = mergeSeedTherapists(loaded)
   } catch (e) {
     console.error('Error loading therapists:', e)
+    therapists.value = mergeSeedTherapists([])
   } finally {
     isLoading.value = false
   }
@@ -40,9 +35,6 @@ onMounted(async () => {
 
 const filtered = () => {
   const all = [...therapists.value]
-  // Siempre incluir el ejemplo como primero si no hay terapeutas reales
-  if (all.length === 0) all.unshift(exampleTherapist)
-
   if (!searchQuery.value.trim()) return all
   const q = searchQuery.value.toLowerCase()
   return all.filter(t =>

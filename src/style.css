@@ -44,8 +44,11 @@
   --color-ink: #2f3530;
   --color-muted: #6b736c;
 
-  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --radius-control: 0.85rem;
+  --radius-card: 1.25rem;
+  --radius-pill: 999px;
 }
 
 .dark {
@@ -62,15 +65,15 @@ body {
   padding: 0;
   font-family: var(--font-sans);
   @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, .font-display {
-  font-family: var(--font-serif);
-  font-optical-sizing: auto;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  font-weight: 560;
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  font-weight: 700;
 }
 
 #app {
@@ -80,16 +83,14 @@ h1, h2, .font-display {
 }
 
 .btn-quiet {
-  @apply w-full py-3.5 rounded-full font-semibold text-white bg-green-700 dark:bg-slate-100 dark:text-slate-900 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-transform;
+  @apply w-full py-3.5 font-semibold text-white bg-green-700 dark:bg-slate-100 dark:text-slate-900 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed transition-transform;
+  border-radius: var(--radius-pill);
 }
 
 .card-soft {
-  @apply bg-white/90 dark:bg-slate-900 rounded-[1.75rem] border border-white/70 dark:border-slate-800;
-  box-shadow: 0 10px 36px rgba(47, 53, 48, 0.045);
-}
-
-.dark .card-soft {
-  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.35);
+  @apply bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800;
+  border-radius: var(--radius-card);
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

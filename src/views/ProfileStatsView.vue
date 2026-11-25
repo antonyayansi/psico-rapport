@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Award, Flame, User, Info, Camera, MessageCircle, LogOut, Sun, Moon,
-  Heart, PawPrint, ShieldCheck, Sparkles, Share2
+  Heart, PawPrint, ShieldCheck, Sparkles, Share2, CloudMoon
 } from 'lucide-vue-next'
 import { db, auth } from '../firebase'
 import { collection, query, orderBy, onSnapshot, doc } from 'firebase/firestore'
@@ -95,12 +95,30 @@ const chartData = ref({
     }]
 })
 
-onMounted(() => {
+onMounted(async () => {
     if (authStore.user?.displayName) {
         userName.value = authStore.user.displayName.split(' ')[0]
     }
     if (authStore.user?.photoURL) {
         userPhoto.value = authStore.user.photoURL
+    }
+
+    if (import.meta.env.VITE_MANUAL_SHOTS === '1') {
+        const { demoStats, mockPet } = await import('../manualShot')
+        currentStreak.value = demoStats.currentStreak
+        points.value = demoStats.points
+        achievements.value = { ...demoStats.achievements }
+        latestMood.value = demoStats.latestMood
+        latestEmotion.value = demoStats.latestEmotion
+        petLive.value = { ...mockPet }
+        chartData.value = {
+            labels: demoStats.chartLabels,
+            datasets: [{
+                ...chartData.value.datasets[0],
+                data: demoStats.chartData
+            }]
+        }
+        return
     }
 
     const userId = authStore.user.uid
@@ -363,6 +381,30 @@ const toggleMoodShare = async () => {
                 >
                     Elegir terapeuta
                 </button>
+            </section>
+
+            <!-- Momentos difíciles -->
+            <section class="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800">
+                <div class="flex items-start gap-3">
+                    <div class="p-2 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                        <CloudMoon class="w-5 h-5" />
+                    </div>
+                    <div class="flex-1">
+                        <h2 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Momentos difíciles</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                            Estrés, sueño, dudas o un día pesado: elige un momento y conversa con tu compañero.
+                        </p>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <button
+                                type="button"
+                                class="px-3 py-1.5 rounded-full text-xs font-bold bg-green-700 text-white"
+                                @click="router.push('/med-support')"
+                            >
+                                Abrir momentos
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Mood share consent -->
